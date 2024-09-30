@@ -79,7 +79,7 @@ body {
     background-size: cover; /* Assure que l'image couvre toute la div */
     justify-content: center;
     align-items: center;
-    height: 620px;
+    height: calc(100vh - 65px);
     margin-bottom: 100px;
     display: flex;
 }
@@ -555,7 +555,7 @@ a {
 
     body {
         overflow-x: hidden;
-        margin: -5px;
+ 
     }
 
 
@@ -706,6 +706,11 @@ a {
 
 
 @media (max-width: 768px) {
+
+    .intro-header {
+        height: calc(100vh - 85px);
+    }
+
     .about-grid {
         flex-direction: column; /* Stack on smaller screens */
         align-items: flex-start; /* Align to the left */
@@ -754,7 +759,7 @@ a {
 @media (max-width: 991px) {
     .intro-header {
         width: 100%; /* Prendre toute la largeur */
-        height: 100vh; /* Prendre toute la hauteur de l'écran */
+        height: calc(100vh - 65px); /* Prendre toute la hauteur de l'écran */
         margin: 0; /* Supprimer les marges si nécessaire */
         padding: 0; /* Supprimer les rembourrages si nécessaire */
         box-sizing: border-box; /* Assurer que la largeur inclut les bordures et le rembourrage */
