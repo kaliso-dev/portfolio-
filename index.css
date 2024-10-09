@@ -155,9 +155,6 @@ body {
     display: inline-block;
 }
 
-.label.cc-light {
-    opacity: .6;
-}
 
 html.w-mod-touch * {
     background-attachment: scroll !important;
@@ -171,6 +168,7 @@ html.w-mod-touch * {
     font-size: 12px;
     font-weight: 500;
     line-height: 20px;
+    color: #6465eb;
 }
 
 * {
@@ -243,17 +241,8 @@ div {
     margin-bottom: 30px;
 }
 
-.label.cc-light {
-    opacity: .6;
-}
-.label {
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 20px;
-}
+
+
 
 .section-heading {
     margin-top: 10px;
@@ -324,18 +313,7 @@ img {
     margin-bottom: 30px;
 }
 
-.label.cc-light {
-    opacity: .6;
-}
 
-.label {
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 20px;
-}
 
 .section-heading {
     margin-top: 10px;
@@ -409,9 +387,7 @@ img:hover {
     margin-bottom: 60px;
 }
 
-.label.cc-light {
-    opacity: .6;
-}
+
 
 .work-heading {
     margin-top: 10px;
@@ -454,14 +430,6 @@ img:hover {
     margin-top: 20px;
 }
 
-.label {
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 20px;
-}
 
 .blog-preview-wrap {
     width: 33.33%;
@@ -484,14 +452,6 @@ img:hover {
     margin-top: 20px;
 }
 
-.label {
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 20px;
-}
 
 a {
     color: #1a1b1f;
