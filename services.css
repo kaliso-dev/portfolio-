@@ -61,6 +61,22 @@
     border-radius: 20px;
 }
 
+.card1 {
+    transition: transform 0.3s ease-in-out; /* Transition fluide pour l'effet de zoom */
+  }
+  
+.card1:hover {
+    transform: scale(1.1); /* Agrandit la carte à 110% de sa taille normale */
+}
+  
+.card2 {
+    transition: transform 0.3s ease-in-out; /* Transition fluide pour l'effet de zoom */
+}
+  
+.card2:hover {
+    transform: scale(1.1); /* Agrandit la carte à 110% de sa taille normale */
+}
+   
 
 @media screen and (max-width: 991px) {
 
