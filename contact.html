@@ -11,26 +11,26 @@
 
   <div class="navbar-custom">
     <div class="logo-custom">
-      <a href="index.html" class="block-custom">
-          <img class="logo_img-custom" src="./assets/logo.png" alt="">
-      </a>
+        <a href="index.html" class="block-custom">
+            <img class="logo_img-custom" src="./assets/logo.png" alt="">
+        </a>
     </div>
-      <div class="pages">
-          <a class="items-custom" href="services.html">SERVICES</a>
-          <a class="items-custom" href="portfolio.html">PORTFOLIO</a>
-          <a class="items-custom" href="ebooks.html">E-BOOKS</a>
-          <a class="items-custom" href="blog.html">BLOG</a>
-          <a class="items-custom" href="contact.html">CONTACT</a>
-      </div>
-      <div class="contactus-custom">
-          <a href="contact.html" class="contact-custom">Contact Us</a>
-      </div>
-      <button class="burger-menu-custom" aria-label="Toggle navigation">
-          <span class="burger-bar-custom"></span>
-          <span class="burger-bar-custom"></span>
-          <span class="burger-bar-custom"></span>
-      </button>
-  </div>
+    <div class="pages-custom"> <!-- Changement ici -->
+        <a class="items-custom" href="services.html">SERVICES</a>
+        <a class="items-custom" href="portfolio.html">PORTFOLIO</a>
+        <a class="items-custom" href="ebooks.html">E-BOOKS</a>
+        <a class="items-custom" href="blog.html">BLOG</a>
+        <a class="items-custom" href="contact.html">CONTACT</a>
+    </div>
+    <div class="contactus-custom">
+        <a href="contact.html" class="contact-custom">Contact Us</a>
+    </div>
+    <button class="burger-menu-custom" aria-label="Toggle navigation">
+        <span class="burger-bar-custom"></span>
+        <span class="burger-bar-custom"></span>
+        <span class="burger-bar-custom"></span>
+    </button>
+</div>
 
 <div class="isolate bg-white px-6 py-24 sm:py-32 lg:px-8">
     <div class="absolute inset-x-0 top-[-10rem] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[-20rem]" aria-hidden="true">
@@ -89,5 +89,14 @@
   
 
     <script src="script.js"></script>
+    <script>
+      const burgerMenu = document.querySelector('.burger-menu-custom');
+      const pages = document.querySelector('.pages-custom');
+  
+      burgerMenu.addEventListener('click', () => {
+          pages.classList.toggle('active');
+      });
+  </script>
+  
 </body>
 </html>
