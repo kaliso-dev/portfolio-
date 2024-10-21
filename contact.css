@@ -63,6 +63,8 @@
     border-radius: 20px !important;
 }
 
+
+
 @media screen and (max-width: 991px) {
     .navbar-custom, .intro-header {
         width: 100% !important;

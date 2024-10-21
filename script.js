@@ -42,5 +42,26 @@ document.addEventListener("DOMContentLoaded", function () {
   });
   
   
-  
+  const toggleSwitch = document.getElementById('toggleSwitch');
+  const switchCircle = document.getElementById('switchCircle');
+
+  toggleSwitch.addEventListener('click', function() {
+    const isChecked = toggleSwitch.getAttribute('aria-checked') === 'true';
+
+    // Toggle the aria-checked attribute
+    toggleSwitch.setAttribute('aria-checked', !isChecked);
+
+    // Toggle the styles for the background color and the position of the circle
+    if (!isChecked) {
+      toggleSwitch.classList.remove('bg-gray-200');
+      toggleSwitch.classList.add('bg-indigo-600');
+      switchCircle.classList.remove('translate-x-0');
+      switchCircle.classList.add('translate-x-3.5');
+    } else {
+      toggleSwitch.classList.remove('bg-indigo-600');
+      toggleSwitch.classList.add('bg-gray-200');
+      switchCircle.classList.remove('translate-x-3.5');
+      switchCircle.classList.add('translate-x-0');
+    }
+  });
   
