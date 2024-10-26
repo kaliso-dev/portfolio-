@@ -68,6 +68,12 @@
     display: flex; /* Assurez-vous que le menu s'affiche */
 }
 
+.discord {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+    width: 100%;
+}
 
 
 @media screen and (max-width: 991px) {

@@ -10,26 +10,26 @@
 </head>
 <body>
 
-  <div class="navbar-custom">
-    <div class="logo-custom">
-        <a href="index.html" class="block-custom">
-            <img class="logo_img-custom" src="./assets/logo.png" alt="">
+  <div class="navbar">
+    <div class="logo">
+        <a href="index.html" class="block">
+            <img class="logo_img" src="./assets/logo.png" alt="">
         </a>
     </div>
-    <div class="pages-custom"> <!-- Changement ici -->
+    <div class="pages"> <!-- Changement ici -->
         <a class="items" href="services.html">SERVICES</a>
         <a class="items" href="portfolio.html">PORTFOLIO</a>
         <a class="items" href="discord.html">DISCORD</a>
         <a class="items" href="contact.html">CONTACT</a>
         <a class="items" href="about.html">About</a>
     </div>
-    <div class="contactus-custom">
-        <a href="contact.html" class="contact-custom">Contact Us</a>
+    <div class="contactus">
+        <a href="contact.html" class="contact">Contact Us</a>
     </div>
-    <button class="burger-menu-custom" aria-label="Toggle navigation">
-        <span class="burger-bar-custom"></span>
-        <span class="burger-bar-custom"></span>
-        <span class="burger-bar-custom"></span>
+    <button class="burger-menu" aria-label="Toggle navigation">
+        <span class="burger-bar"></span>
+        <span class="burger-bar"></span>
+        <span class="burger-bar"></span>
     </button>
 </div>
 
@@ -91,8 +91,8 @@
 
     <script src="script.js"></script>
     <script>
-      const burgerMenu = document.querySelector('.burger-menu-custom');
-      const pages = document.querySelector('.pages-custom');
+      const burgerMenu = document.querySelector('.burger-menu');
+      const pages = document.querySelector('.pages');
   
       burgerMenu.addEventListener('click', () => {
           pages.classList.toggle('active');
