@@ -68,16 +68,12 @@
     display: flex; /* Assurez-vous que le menu s'affiche */
 }
 
-.container-about {
+.container-center{
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-direction: column;
     width: 100%;
-
 }
-
-
 
 @media screen and (max-width: 991px) {
     .navbar, .intro-header {
