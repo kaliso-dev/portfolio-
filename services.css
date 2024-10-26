@@ -89,11 +89,12 @@
     opacity: .6;
   }
 
-  .footer-wrap {
+.footer-wrap {
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
+
 .insta {
     border-radius: 50%;
     width: 30px;
@@ -167,32 +168,3 @@
     }
 }
 
-/* Pour les petits écrans (moins de 1024px) */
-@media (max-width: 2000px) {
-    .card1, .card2 {
-      padding: 0.5rem 0.7rem; /* Réduire l'espace interne des cartes */
-      font-size: 0.875rem; /* Réduire légèrement la taille du texte */
-      border-radius: 10px;
-    }
-    .card1 p, .card2 p {
-      font-size: 0.8rem; /* Réduire la taille du texte pour les descriptions */
-    }
-    .card1 h3, .card2 h3 {
-      font-size: 1.25rem; /* Ajuster les titres pour être plus petits */
-    }
-  }
-
-  
-  /* Pour les très petits écrans (moins de 768px) */
-  @media (max-width: 768px) {
-    .card1, .card2 {
-      padding: 1rem; /* Encore plus petit sur les très petits écrans */
-      font-size: 0.75rem;
-    }
-    .card1 h3, .card2 h3 {
-      font-size: 1rem;
-    }
-    .card1 p, .card2 p {
-      font-size: 0.875rem;
-    }
-  }

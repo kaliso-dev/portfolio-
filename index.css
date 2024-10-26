@@ -357,7 +357,6 @@ img {
     transition: 0.45s;
 }
 
-
 img:hover {
     filter: blur(0);
 }
@@ -366,6 +365,7 @@ img:hover {
     grid-template-columns: 2fr 1fr;
     grid-template-areas: ". .";
 }
+
 .about-grid {
     grid-column-gap: 80px;
     grid-row-gap: 30px;
@@ -373,6 +373,7 @@ img:hover {
     align-items: center;
     margin-bottom: 80px;
 }
+
 .w-layout-grid {
     grid-row-gap: 16px;
     grid-column-gap: 16px;
@@ -386,8 +387,6 @@ img:hover {
     text-align: center;
     margin-bottom: 60px;
 }
-
-
 
 .work-heading {
     margin-top: 10px;
@@ -472,29 +471,30 @@ a {
     padding: 2rem;
     margin: auto;
 
-  }
+}
 
-  .center {
+.center {
     display: flex;
     justify-content: center;
     flex-direction: column;
-  }
+}
   
-  .typing-complete {
+.typing-complete {
     border-right: none; /* Retirer le curseur clignotant */
     
-  }
+}
   
-  .paragraph-tiny {
+.paragraph-tiny {
     font-family: Montserrat, sans-serif;
     opacity: .6;
-  }
+}
 
-  .footer-wrap {
+.footer-wrap {
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
+}
+
 .insta {
     border-radius: 50%;
     width: 30px;
@@ -517,7 +517,6 @@ a {
         overflow-x: hidden;
  
     }
-
 
     .intro-content {
         width: 90%;
