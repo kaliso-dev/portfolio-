@@ -68,11 +68,11 @@
 }
 
 
-
 @media screen and (max-width: 991px) {
     .navbar, .intro-header {
         width: 100% !important;
     }
+
 }
 
 @media (max-width: 985px) {

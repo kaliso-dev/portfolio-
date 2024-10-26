@@ -76,6 +76,29 @@
 .card2:hover {
     transform: scale(1.1); /* Agrandit la carte à 110% de sa taille normale */
 }
+
+.container {
+    width: 100%;
+    max-width: 1140px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.paragraph-tiny {
+    font-family: Montserrat, sans-serif;
+    opacity: .6;
+  }
+
+  .footer-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+.insta {
+    border-radius: 50%;
+    width: 30px;
+    height: auto;
+}
    
 
 @media screen and (max-width: 991px) {
@@ -84,6 +107,10 @@
         width: 100%; 
     }
 
+    /* Styles supplémentaires si nécessaire */
+    .container {
+        padding: 10px; /* Réduire le rembourrage pour les petits écrans */
+    }
 }
 
 @media (max-width: 985px) {
