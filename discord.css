@@ -73,8 +73,33 @@
     width: 100%;
 }
 
+.paragraph-tiny {
+    font-family: Montserrat, sans-serif;
+    opacity: .6;
+}
 
+.paragraph-tiny {
+    font-family: Montserrat, sans-serif;
+    opacity: .6;
+}
 
+.footer-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 0px 10px;
+}
+
+.insta {
+    border-radius: 50%;
+    width: 30px;
+    height: auto;
+}
+
+.section {
+    margin-top: 20px;
+}
 @media screen and (max-width: 991px) {
     .navbar, .intro-header {
         width: 100%;

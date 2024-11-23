@@ -8,6 +8,7 @@
     position: relative !important;
     z-index: 999;
     background-color: #fefefc;
+    margin-bottom: 20px;
 }
 
 .logo_img {
@@ -67,6 +68,34 @@
     display: flex !important; /* Assurez-vous que le menu s'affiche */
 }
 
+.container {
+    width: 100%;
+    max-width: 1140px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.paragraph-tiny {
+    font-family: Montserrat, sans-serif;
+    opacity: .6;
+}
+
+.footer-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 0px 10px;
+}
+
+.insta {
+    border-radius: 50%;
+    width: 30px;
+    height: auto;
+}
+
+
+
 
 @media screen and (max-width: 991px) {
     .navbar, .intro-header {
@@ -80,6 +109,10 @@
         flex-direction: column !important;
         align-items: flex-start !important;
         padding: 20px !important;
+    }
+
+    .section {
+        margin-top: 40px;
     }
 
     .pages {
