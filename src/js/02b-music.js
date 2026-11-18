@@ -15,6 +15,8 @@ const Music = {
     el.preload = 'auto';
     el.src = m.src;
     el.volume = 1;
+    // fichier absent ou illisible : on renonce à la musique (et à l'invite « dégainer »)
+    el.addEventListener('error', () => { this.failed = true; this.playing = false; this.sync(); });
     // boucle « propre » : on saute le silence du début à chaque tour
     el.addEventListener('ended', () => { if (this.playing) { el.currentTime = m.start || 0; el.play().catch(() => {}); } });
     document.addEventListener('visibilitychange', () => {
@@ -57,7 +59,7 @@ const Music = {
     } else gsap.to(this.el, { volume: clamp(v / Math.max(this.vol, 0.01) * 0.35, 0, 1), duration: t, overwrite: true });
   },
   start(fade = 3) {
-    if (!this.el || this.playing || !Sound.on) return Promise.resolve(this.playing);
+    if (!this.el || this.failed || this.playing || !Sound.on) return Promise.resolve(this.playing);
     Sound.unlock();
     this.graph();
     if (!this.gain) this.el.volume = 0;

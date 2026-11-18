@@ -253,7 +253,7 @@ function runPreloader(onReveal) {
   // pas encore de son autorisé : l'épée attend le visiteur (« dégainer ») pour que musique, coup et ouverture partent ensemble
   tl.call(() => {
     const M = SITE.music;
-    const needGate = M && M.src && M.gate && Sound.on && !(Sound.ctx && Sound.ctx.state === 'running' && Music.playing);
+    const needGate = M && M.src && M.gate && Sound.on && !Music.failed && !(Sound.ctx && Sound.ctx.state === 'running' && Music.playing);
     if (!needGate) return;
     tl.pause();
     const gate = $('.pl-gate', pre), enter = $('.pl-enter', gate), mute = $('.pl-mute', gate);
