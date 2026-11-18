@@ -17,7 +17,7 @@ const TK_TYPES = ['vitrine', 'ecommerce', 'webapp', 'mobile', 'api', 'ia', 'outi
 const TK_BUDGETS = ['lt2k', '2-5k', '5-10k', '10k+', 'tbd'];
 const TK_DELAIS = ['urgent', '1m', '2-3m', 'flex'];
 const TERM_PAGES = { index: 'index', '~': 'index', accueil: 'index', home: 'index', projets: 'projets', work: 'projets', 'a-propos': 'a-propos', about: 'a-propos', contact: 'contact' };
-const YES = /^(o|oui|y|yes|نعم)$/i, NO = /^(n|non|no|لا)$/i, CANCEL = /^(annuler|cancel|quit|q|إلغاء)$/i;
+const YES = /^(o|oui|y|yes)$/i, NO = /^(n|non|no)$/i, CANCEL = /^(annuler|cancel|quit|q)$/i;
 const ARABIC = /[\u0590-\u08FF\uFB50-\uFEFF]/;
 
 // libellé traduit si la clé existe, sinon la valeur brute (anciens tickets)
@@ -71,7 +71,7 @@ function PageTerminal() {
           <input id="term-in" class="term-in" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" enterkeyhint="send" dir="auto" aria-label="${esc(t('term.cmd'))}">
         </form>
       </div>
-      <div class="term-chips">${['help', 'forge', 'ticket', 'claude', 'ls', 'lang', 'duel'].map((c) => `<button type="button" data-run="${c}">${c}</button>`).join('')}</div>
+      <div class="term-chips">${['help', 'forge', 'ticket', 'claude', 'ls', 'lang', 'duel'].map((c) => `<button type="button" data-run="${c}">${c}</button>`).join('')}<a class="term-switch" href="#forge">${esc(t('gui.visual'))} →</a></div>
     </div></section>
   </div>`);
   const out = $('.term-out', el), input = $('.term-in', el), ps1 = $('.term-ps1', el), form = $('.term-line', el);
@@ -79,7 +79,8 @@ function PageTerminal() {
   const hist = []; let hi = 0;
   let mode = null;    // null | { kind: 'ticket' | 'forge' | 'duel', ... }
   let last = null;    // dernier ticket
-  let draft = null;   // dernière description donnée à KALISO (et son plan)
+  let draft = Draft.get();   // dernière description donnée à KALISO (et son plan), partagée avec la forge visuelle
+  const setDraft = (d) => { draft = d; Draft.set(d); };
   let busy = false;
   const PS1 = `${t('term.user')}@${SITE.handle}:~$`;
   const setPS = (s) => { ps1.textContent = s; };
@@ -97,8 +98,8 @@ function PageTerminal() {
   const say = (txt, cls) => print(esc(txt), cls);
   const para = (txt, cls) => wrapText(txt, cols()).forEach((l) => say(l, cls));
   const cmdLink = (c, label = c) => `<button type="button" class="tcmd" data-run="${esc(c)}">${esc(label)}</button>`;
-  const cols = () => clamp(Math.floor((out.clientWidth - 32) / (parseFloat(getComputedStyle(out).fontSize) * 0.6)), 34, 72);
-  const nf = (n) => Number(n).toLocaleString(LANG === 'ar' ? 'ar-MA' : LANG === 'en' ? 'en-US' : 'fr-FR');
+  const cols = () => clamp(Math.floor((out.clientWidth - 48) / (parseFloat(getComputedStyle(out).fontSize) * 0.6)), 34, 96);
+  const nf = (n) => Number(n).toLocaleString(LANG === 'en' ? 'en-US' : 'fr-FR');
   const endMode = (msg) => { mode = null; setPS(PS1); if (msg) say(msg, 'dim'); };
 
   /* --- commandes -------------------------------------------------------------- */
@@ -106,7 +107,7 @@ function PageTerminal() {
     help: { run() {
       const rows = [['whoami', 'h.whoami'], ['ls', 'h.ls'], ['open <projet>', 'h.open'], ['cat about.md', 'h.cat'], ['forge', 'h.forge'],
         ['ticket', 'h.ticket'], ['status [id]', 'h.status'], ['claude', 'h.claude'], ['contact', 'h.contact'], ['lang [fr|en|ar]', 'h.lang'],
-        ['theme [couleur]', 'h.theme'], ['duel', 'h.duel'], ['cd <page>', 'h.cd'], ['clear', 'h.clear']];
+        ['theme [couleur]', 'h.theme'], ['duel', 'h.duel'], ['visuel', 'h.visuel'], ['cd <page>', 'h.cd'], ['clear', 'h.clear']];
       print(rows.map(([c, d]) => `  ${cmdLink(c.startsWith('cat') ? 'cat about.md' : c.split(' ')[0], c)}${' '.repeat(Math.max(2, 18 - c.length))}<span class="dim">${esc(t(d))}</span>`).join('\n'));
       say('  ' + t('term.keys'), 'dim');
     } },
@@ -164,6 +165,7 @@ function PageTerminal() {
       print(LANGS.map((x) => `  ${cmdLink('lang ' + x, ('lang ' + x).padEnd(9))} <span class="dim" lang="${x}">${esc(LANG_NAMES[x])}${x === LANG ? ' ' + esc(t('term.current')) : ''}</span>`).join('\n'));
     } },
     duel: { run() { startDuel(); } },
+    visuel: { run() { page.timers.push(setTimeout(() => go('#forge'), 200)); } },
     claude: { run() {
       print(`<span class="acc">claude</span> <span class="dim">${esc(t('claude.who'))}</span>`);
       para(t('claude.p1'));
@@ -173,7 +175,7 @@ function PageTerminal() {
     } },
     clear: { run() { out.innerHTML = ''; } },
     // commandes cachées
-    date: { hidden: true, run() { say(new Date().toLocaleString(LANG === 'ar' ? 'ar-MA' : LANG, { dateStyle: 'full', timeStyle: 'short' })); } },
+    date: { hidden: true, run() { say(new Date().toLocaleString(LANG, { dateStyle: 'full', timeStyle: 'short' })); } },
     echo: { hidden: true, run(arg) { say(arg || ''); } },
     history: { hidden: true, run() { hist.forEach((c, i) => say(`${String(i + 1).padStart(3)}  ${c}`, 'dim')); } },
     sudo: { hidden: true, run() { say(t('term.sudo'), 'err'); } },
@@ -184,8 +186,8 @@ function PageTerminal() {
     sceaux: { hidden: true, run() { seals(); } },
     tresor: { hidden: true, run() { treasure(); } },
   };
-  CMDS.kaliso = CMDS.forge;
-  CMDS['سلام'] = CMDS.salam; CMDS.seals = CMDS.sceaux; CMDS.treasure = CMDS.tresor; CMDS['كنز'] = CMDS.tresor;
+  CMDS.kaliso = CMDS.forge; CMDS.gui = CMDS.visuel; CMDS.visual = CMDS.visuel;
+  CMDS.seals = CMDS.sceaux; CMDS.treasure = CMDS.tresor;
   const names = () => Object.keys(CMDS).filter((k) => !CMDS[k].hidden && k !== 'kaliso');
 
   /* --- KALISO ------------------------------------------------------------------ */
@@ -196,13 +198,14 @@ function PageTerminal() {
     print(`<span class="acc">KALISO</span> <span class="dim">— ${esc(t('h.forge'))}</span>`);
     para(t('fg.ask'));
     say(t('fg.privacy'), 'dim');
+    print(`<span class="dim">${esc(t('gui.visual'))} :</span> <a class="tcmd" href="#forge">#forge</a>`);
     setPS('forge ›');
   }
   async function runForge(text) {
     if (text.length < 12) { say(t('fg.short'), 'err'); mode = { kind: 'forge' }; setPS('forge ›'); return; }
     endMode();
     busy = true; input.disabled = true;
-    draft = { text };
+    setDraft({ text });
     const heat = t('fg.heat');
     const line = print('', 'dim forge-heat');
     let k = 0;
@@ -225,7 +228,7 @@ function PageTerminal() {
     busy = false; input.disabled = false;
     if (!IS_TOUCH) input.focus({ preventScroll: true });
     if (!r || !r.ok) return cold(r || {});
-    draft = { text, plan: r.plan, id: r.id };
+    setDraft({ text, plan: r.plan, id: r.id });
     if (r.plan.offtopic) { para(r.plan.summary); say(t('fg.offtopic'), 'dim'); return; }
     showPlan(r);
   }
@@ -324,7 +327,7 @@ function PageTerminal() {
     const dl = mode.data.delai;
     mode.ticket = { id: `KAL-${ymd}-····`, ymd, status: 'draft', ...mode.data,
       priorite: dl === 'urgent' ? 'haute' : dl === '1m' ? 'normale' : 'basse',
-      date: d.toLocaleDateString(LANG === 'ar' ? 'fr-FR' : LANG) + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) };
+      date: d.toLocaleDateString(LANG) + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) };
     print(esc(ticketText(mode.ticket, Math.min(cols(), 56))), 'pre');
     print(`<span class="acc">?</span> ${esc(t('tk.send'))} ${cmdLink(LANG === 'fr' ? 'o' : 'y', t('tk.yes'))} / ${cmdLink('n', t('tk.no'))}`);
     mode.confirm = true;
@@ -344,7 +347,7 @@ function PageTerminal() {
     if (!IS_TOUCH) input.focus({ preventScroll: true });
     if (r && r.ok) {
       Object.assign(tk, { id: r.id, key: r.key, status: r.status || 'nouveau' });
-      storeTicket(tk); last = tk; draft = null;
+      storeTicket(tk); last = tk; setDraft(null);
       Sound.play('slash', { dir: -1 });
       print(`<span class="acc">${esc(t('tk.sent', { id: tk.id }))}</span> ${esc(t('tk.replyBy', { email: tk.email }))}`);
       print(`<span class="dim">${esc(t('tk.track'))}</span> ${cmdLink('status ' + tk.id)}`);
@@ -424,7 +427,7 @@ function PageTerminal() {
   }
   function duelInput(v) {
     const s = v.trim().toLowerCase();
-    if (/^(fuir|flee|run|q|quit|annuler|cancel|اهرب)$/.test(s)) return endMode(t('duel.flee'));
+    if (/^(fuir|flee|run|q|quit|annuler|cancel)$/.test(s)) return endMode(t('duel.flee'));
     let i = parseInt(s, 10) - 1;
     if (!(i >= 0 && i <= 2)) { const all = UI['duel.moves'].flat(); const j = all.findIndex((m) => m.toLowerCase() === s); i = j >= 0 ? j % 3 : -1; }
     if (i < 0) return say(t('duel.pick'), 'err');
@@ -526,7 +529,7 @@ function PageTerminal() {
       // arrivée depuis « forge allumée » ou le contact : KALISO écoute déjà
       let auto = null;
       try { auto = sessionStorage.getItem('kaliso-run'); sessionStorage.removeItem('kaliso-run'); } catch (e) {}
-      if (auto === 'forge' || auto === 'ticket') run(auto);
+      if (auto && /^(forge|ticket|status( KAL-[0-9A-F·-]+)?)$/.test(auto)) run(auto);
       if (!IS_TOUCH) input.focus({ preventScroll: true });
     }, (delay + 0.5) * 1000));
   };

@@ -16,7 +16,7 @@ rien ne casse, et tu ne paies rien.
 
 ## La voie la plus simple : GitHub déploie tout seul (aucune commande à taper)
 
-Le dépôt contient `.github/workflows/deploy.yml` : à chaque push sur `main`, GitHub crée la base,
+Le dépôt contient `.github/workflows/deploy.yml` : à chaque push sur `main`, GitHub crée la base (en Europe de l'Ouest, au plus près de tes visiteurs),
 construit le site et le met en ligne sur ton compte Cloudflare. Il lui faut seulement trois secrets.
 
 **1. Cloudflare — créer un jeton** (compte gratuit : [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up))
@@ -73,7 +73,7 @@ Une page s'ouvre dans ton navigateur : accepte.
 **2. Créer la base de données**
 
 ```bash
-npx wrangler d1 create kaliso
+npx wrangler d1 create kaliso-eu --location weur
 ```
 
 La commande affiche un `database_id` (une suite de lettres et de chiffres). Ouvre `wrangler.toml` et
@@ -82,7 +82,7 @@ remplace `REMPLACE-MOI-PAR-L-ID-DONNE-PAR-WRANGLER` par cet identifiant.
 **3. Créer les tables**
 
 ```bash
-npx wrangler d1 migrations apply kaliso --remote
+npx wrangler d1 migrations apply kaliso-eu --remote
 ```
 
 **4. Construire et mettre en ligne**
@@ -117,7 +117,7 @@ Colle un mot de passe long (au moins 12 caractères, 24 c'est mieux). Pour en g�
 | voir les nouvelles demandes | `https://<ton-site>/admin` (le nombre de nouveaux tickets s'affiche dans l'onglet du navigateur) |
 | répondre à un client | bouton « répondre » (ouvre ton email) ; le message « réponse visible » apparaît aussi au client quand il tape `status` dans le terminal |
 | suivre un ticket | change son statut : nouveau → en discussion → devis envoyé → en forge → livré |
-| dire si je suis disponible | interrupteur « forge allumée », avec un message court dans les trois langues |
+| dire si je suis disponible | interrupteur « forge allumée », avec un message court en français et en anglais |
 | récupérer tous les tickets | « export CSV » (s'ouvre dans Excel ou Google Sheets) |
 | ajouter un projet | voir `docs/gabarit-etude-de-cas.md`, puis `python3 build.py && npx wrangler deploy` |
 | changer mes tarifs | `worker/src/tarifs.js`, puis `npx wrangler deploy` |
@@ -129,7 +129,7 @@ affichées par KALISO. Le modèle ne fixe jamais de prix : il classe le projet, 
 modules nécessaires, puis le code applique ta grille. ⚠ Les valeurs actuelles sont des valeurs de départ :
 ajuste-les avant de partager le site. Pour n'afficher aucun chiffre, mets `afficher: false`.
 
-**Le modèle** — `wrangler.toml`, variables `MODEL` (Mistral Small 3.1 : bon en français et en arabe) et
+**Le modèle** — `wrangler.toml`, variables `MODEL` (Mistral Small 3.1 : bon en français et en anglais) et
 `MODEL_FALLBACK` (Llama 3.1 8B, utilisé si le premier échoue).
 
 **Les garde-fous** — `wrangler.toml` : `FORGE_DAILY_CAP` (demandes par jour, tous visiteurs confondus),
@@ -190,7 +190,7 @@ Le dashboard reste sur l'adresse du Worker : `https://kaliso.<ton-compte>.worker
 
 ```bash
 printf 'ADMIN_TOKEN=un-mot-de-passe-de-test\nDEV=1\n' > .dev.vars
-npx wrangler d1 migrations apply kaliso --local
+npx wrangler d1 migrations apply kaliso-eu --local
 python3 build.py && npx wrangler dev
 ```
 

@@ -24,6 +24,8 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
       CF_API: https://api.cloudflare.com/client/v4
+      D1_NAME: kaliso-eu   # base de données, placée en Europe de l'Ouest (au plus près des visiteurs)
+      D1_REGION: weur
     steps:
       - name: Secrets présents ?
         id: check
@@ -69,28 +71,38 @@ jobs:
           [ -n "$SUB" ] || { echo "::error::Impossible d'obtenir un sous-domaine workers.dev."; exit 1; }
           echo "sous-domaine : $SUB.workers.dev"
 
-      - name: Base D1 « kaliso » (créée au premier passage)
-        if: steps.check.outputs.ok == 'true'
-        run: |
-          H="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
-          getid() { curl -sS "$CF_API/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database?name=kaliso" -H "$H" | python3 -c "import sys,json; r=json.load(sys.stdin).get('result') or []; r=[x for x in r if x.get('name')=='kaliso']; print(r[0]['uuid'] if r else '')"; }
-          ID=$(getid)
-          if [ -z "$ID" ]; then
-            curl -fsS -X POST "$CF_API/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database" -H "$H" -H "Content-Type: application/json" --data '{"name":"kaliso"}' > /dev/null \
-              || { echo "::error::Création de la base D1 refusée : ajoute la permission « D1 : Edit » au jeton."; exit 1; }
-            ID=$(getid)
-          fi
-          [ -n "$ID" ] || { echo "::error::Base D1 introuvable."; exit 1; }
-          sed -i "s/^database_id = .*/database_id = \"$ID\"/" wrangler.toml
-          echo "base D1 : $ID"
-
       - name: Installer wrangler
         if: steps.check.outputs.ok == 'true'
         run: npm install --no-save --no-audit --no-fund wrangler@4
 
+      - name: Base D1 (créée au premier passage, en Europe de l'Ouest)
+        if: steps.check.outputs.ok == 'true'
+        run: |
+          H="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          A="$CF_API/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database"
+          getid() { curl -sS "$A?name=$1" -H "$H" | python3 -c "import sys,json; n=sys.argv[1]; r=json.load(sys.stdin).get('result') or []; r=[x for x in r if x.get('name')==n]; print(r[0]['uuid'] if r else '')" "$1"; }
+          ID=$(getid "$D1_NAME")
+          if [ -z "$ID" ]; then
+            curl -fsS -X POST "$A" -H "$H" -H "Content-Type: application/json" --data "{\"name\":\"$D1_NAME\",\"primary_location_hint\":\"$D1_REGION\"}" > /dev/null \
+              || { echo "::error::Création de la base D1 refusée : ajoute la permission « D1 : Edit » au jeton."; exit 1; }
+            ID=$(getid "$D1_NAME")
+            # première version de la base (créée aux États-Unis) : on recopie ses données
+            OLD=$(getid kaliso)
+            if [ -n "$OLD" ]; then
+              echo "copie de l'ancienne base « kaliso » vers « $D1_NAME »"
+              sed -i "s/^database_name = .*/database_name = \"kaliso\"/; s/^database_id = .*/database_id = \"$OLD\"/" wrangler.toml
+              npx wrangler d1 export kaliso --remote --output /tmp/ancienne.sql
+              sed -i "s/^database_name = .*/database_name = \"$D1_NAME\"/; s/^database_id = .*/database_id = \"$ID\"/" wrangler.toml
+              npx wrangler d1 execute "$D1_NAME" --remote --file /tmp/ancienne.sql
+            fi
+          fi
+          [ -n "$ID" ] || { echo "::error::Base D1 introuvable."; exit 1; }
+          sed -i "s/^database_name = .*/database_name = \"$D1_NAME\"/; s/^database_id = .*/database_id = \"$ID\"/" wrangler.toml
+          curl -sS "$A/$ID" -H "$H" | python3 -c "import sys,json; r=json.load(sys.stdin).get('result') or {}; print('base D1 :', {k: v for k, v in r.items() if k != 'uuid'})"
+
       - name: Tables de la base
         if: steps.check.outputs.ok == 'true'
-        run: npx wrangler d1 migrations apply kaliso --remote
+        run: npx wrangler d1 migrations apply "$D1_NAME" --remote
 
       - name: Construire le site
         if: steps.check.outputs.ok == 'true'
@@ -130,6 +142,7 @@ jobs:
           echo "--- accueil : $(curl -sS -o /dev/null -w '%{http_code}' "$URL/")"
           echo "--- dashboard : $(curl -sS -o /dev/null -w '%{http_code}' "$URL/admin")"
           echo "--- état de la forge : $(curl -sS "$URL/api/status")"
+          echo "--- temps serveur (état) : $(curl -sS -o /dev/null -D - "$URL/api/status" | grep -i server-timing)"
           echo "--- KALISO :"
           curl -sS -X POST "$URL/api/forge" -H "content-type: application/json" \
             --data '{"text":"Test de déploiement : un site vitrine pour un restaurant marocain à Lyon, avec réservation en ligne","lang":"fr"}' \

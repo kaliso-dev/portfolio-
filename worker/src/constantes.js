@@ -1,5 +1,5 @@
 // Libellés partagés par l'API et le dashboard (clés courtes stockées en base)
-export const LANGS = ['fr', 'en', 'ar'];
+export const LANGS = ['fr', 'en'];
 
 export const TYPES = {
   vitrine: 'Site vitrine',

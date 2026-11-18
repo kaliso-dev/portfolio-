@@ -40,3 +40,9 @@ const FORGE = {
   label() { return t(this.lit ? 'forge.lit' : 'forge.out'); },
   sub() { return this.note || t(this.lit ? 'forge.litSub' : 'forge.outSub'); },
 };
+
+/* --- brouillon partagé entre le terminal et la forge visuelle -------------------- */
+const Draft = {
+  get() { try { return JSON.parse(sessionStorage.getItem('kaliso-draft') || 'null'); } catch (e) { return null; } },
+  set(d) { try { if (d) sessionStorage.setItem('kaliso-draft', JSON.stringify(d)); else sessionStorage.removeItem('kaliso-draft'); } catch (e) {} },
+};

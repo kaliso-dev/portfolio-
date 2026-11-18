@@ -51,6 +51,21 @@ async function hit(env, key, limit, windowSec) {
   const n = row ? row.n : 1;
   return { ok: n <= limit, n, left: Math.max(0, limit - n), retry: (w + 1) * windowSec - t };
 }
+// plusieurs compteurs en un seul aller-retour vers la base
+async function hitAll(env, specs) {
+  const t = now();
+  const stmts = specs.map(([k, , win]) => {
+    const w = Math.floor(t / win);
+    return env.DB.prepare('INSERT INTO hits (k, n, exp) VALUES (?1, 1, ?2) ON CONFLICT(k) DO UPDATE SET n = n + 1 RETURNING n').bind(`${k}:${w}`, (w + 1) * win);
+  });
+  const res = await env.DB.batch(stmts);
+  return specs.map(([, lim, win], i) => {
+    const w = Math.floor(t / win);
+    const n = (res[i] && res[i].results && res[i].results[0] && res[i].results[0].n) || 1;
+    return { ok: n <= lim, n, left: Math.max(0, lim - n), retry: (w + 1) * win - t };
+  });
+}
+const peekStmt = (env, key, windowSec) => env.DB.prepare('SELECT n FROM hits WHERE k = ?1').bind(`${key}:${Math.floor(now() / windowSec)}`);
 async function peek(env, key, windowSec) {
   const w = Math.floor(now() / windowSec);
   const row = await env.DB.prepare('SELECT n FROM hits WHERE k = ?1').bind(`${key}:${w}`).first();
@@ -99,8 +114,8 @@ async function postForge(request, env, ctx) {
   const lang = LANGS.includes(b.lang) ? b.lang : 'fr';
   if (text.length < 12) return fail(400, 'description trop courte', { field: 'text' });
   const v = await visitor(request, env);
-  for (const [k, lim, win] of [[`forge:h:${v}`, num(env.FORGE_PER_HOUR, 6), 3600], [`forge:d:${v}`, num(env.FORGE_PER_DAY, 20), 86400]]) {
-    const r = await hit(env, k, lim, win);
+  // compteurs du visiteur en un aller-retour ; le compteur global seulement s'il passe (un abuseur ne vide pas le quota)
+  for (const r of await hitAll(env, [[`forge:h:${v}`, num(env.FORGE_PER_HOUR, 6), 3600], [`forge:d:${v}`, num(env.FORGE_PER_DAY, 20), 86400]])) {
     if (!r.ok) return fail(429, 'trop de demandes', { cold: true, reason: 'rate', retry: r.retry });
   }
   const g = await hit(env, 'forge:global', num(env.FORGE_DAILY_CAP, 150), 86400);
@@ -207,32 +222,53 @@ const parseRow = (r) => {
 
 async function admin(request, env, url) {
   const v = await visitor(request, env);
-  // 10 erreurs de mot de passe par quart d'heure, puis porte close
-  if (await peek(env, `auth:${v}`, 900) >= 10) return fail(429, 'trop de tentatives, réessaie dans 15 minutes');
-  if (!(await isAdmin(request, env))) {
-    await hit(env, `auth:${v}`, 10, 900);
-    return fail(401, env.ADMIN_TOKEN ? 'jeton invalide' : 'ADMIN_TOKEN non configuré (npx wrangler secret put ADMIN_TOKEN)');
-  }
-  const o = request.headers.get('origin');
-  if (o && o !== url.origin) return fail(403, 'origine refusée');
   const p = url.pathname.replace(/^\/api\/admin/, '');
   const m = request.method;
   const DB = env.DB;
-
-  if (p === '/overview' && m === 'GET') {
-    const [status, counts, today, total, forgesToday, newest] = await Promise.all([
-      getStatus(env),
-      DB.prepare('SELECT status, COUNT(*) AS n FROM tickets GROUP BY status').all(),
-      DB.prepare("SELECT COUNT(*) AS n FROM tickets WHERE created_at >= date('now')").first(),
-      DB.prepare('SELECT COUNT(*) AS n FROM tickets').first(),
-      DB.prepare("SELECT COUNT(*) AS n, SUM(ok) AS ok FROM forges WHERE created_at >= date('now')").first(),
-      DB.prepare('SELECT COUNT(*) AS n FROM forges').first(),
-    ]);
-    const used = await peek(env, 'forge:global', 86400);
-    return json({ ok: true, status, labels: { TYPES, BUDGETS, DELAIS, STATUTS },
-      tickets: { total: total.n, today: today.n, byStatus: Object.fromEntries(counts.results.map((r) => [r.status, r.n])) },
-      forge: { today: forgesToday.n || 0, okToday: forgesToday.ok || 0, total: newest.n, cap: num(env.FORGE_DAILY_CAP, 150), used, model: modelLabel(env.MODEL), prices: TARIFS.afficher } });
+  const o = request.headers.get('origin');
+  if (o && o !== url.origin) return fail(403, 'origine refusée');
+  // mauvais mot de passe : compté ; 10 erreurs par quart d'heure, puis porte close
+  if (!(await isAdmin(request, env))) {
+    const r = await hit(env, `auth:${v}`, 10, 900);
+    if (!r.ok) return fail(429, 'trop de tentatives, réessaie dans 15 minutes');
+    return fail(401, env.ADMIN_TOKEN ? 'jeton invalide' : 'ADMIN_TOKEN non configuré (npx wrangler secret put ADMIN_TOKEN)');
   }
+  const locked = (row) => row && row.n >= 10;
+  const LOCKED = () => fail(429, 'trop de tentatives, réessaie dans 15 minutes');
+
+  // tout le tableau de bord en un seul aller-retour vers la base
+  if ((p === '/dashboard' || p === '/overview') && m === 'GET') {
+    const w = Math.floor(now() / 86400);
+    const r = await DB.batch([
+      peekStmt(env, `auth:${v}`, 900),
+      DB.prepare("SELECT v FROM settings WHERE k = 'forge'"),
+      DB.prepare('SELECT status, COUNT(*) AS n FROM tickets GROUP BY status'),
+      DB.prepare("SELECT COUNT(*) AS n FROM tickets WHERE created_at >= date('now')"),
+      DB.prepare('SELECT COUNT(*) AS n FROM tickets'),
+      DB.prepare("SELECT COUNT(*) AS n, SUM(ok) AS ok FROM forges WHERE created_at >= date('now')"),
+      DB.prepare('SELECT COUNT(*) AS n FROM forges'),
+      DB.prepare('SELECT n FROM hits WHERE k = ?1').bind(`forge:global:${w}`),
+      DB.prepare('SELECT t.*, f.plan, f.estimate, f.model AS forge_model FROM tickets t LEFT JOIN forges f ON f.id = t.forge_id ORDER BY t.created_at DESC LIMIT 300'),
+    ]);
+    const first = (i) => (r[i].results && r[i].results[0]) || null;
+    if (locked(first(0))) return LOCKED();
+    let status = DEFAULT_STATUS;
+    if (first(1)) { try { status = { ...DEFAULT_STATUS, ...JSON.parse(first(1).v) }; } catch (e) {} }
+    const fToday = first(5) || {};
+    return json({ ok: true, status, labels: { TYPES, BUDGETS, DELAIS, STATUTS },
+      tickets: { total: (first(4) || {}).n || 0, today: (first(3) || {}).n || 0, byStatus: Object.fromEntries((r[2].results || []).map((x) => [x.status, x.n])) },
+      forge: { today: fToday.n || 0, okToday: fToday.ok || 0, total: (first(6) || {}).n || 0, cap: num(env.FORGE_DAILY_CAP, 150), used: (first(7) || {}).n || 0, model: modelLabel(env.MODEL), prices: TARIFS.afficher },
+      list: (r[8].results || []).map(({ access_key, ...x }) => parseRow(x)) });
+  }
+  if (p === '/forges' && m === 'GET') {
+    const r = await DB.batch([peekStmt(env, `auth:${v}`, 900), DB.prepare('SELECT * FROM forges ORDER BY created_at DESC LIMIT 200')]);
+    if (locked(r[0].results && r[0].results[0])) return LOCKED();
+    return json({ ok: true, forges: (r[1].results || []).map(parseRow) });
+  }
+  // écritures : on vérifie le verrou avant d'agir
+  if (m !== 'GET' && locked(await peekStmt(env, `auth:${v}`, 900).first())) return LOCKED();
+
+  if ((p === '/tickets' || p === '/export') && m === 'GET' && locked(await peekStmt(env, `auth:${v}`, 900).first())) return LOCKED();
   if (p === '/tickets' && m === 'GET') {
     const st = url.searchParams.get('status');
     const q = clean(url.searchParams.get('q') || '', 80);
@@ -260,10 +296,6 @@ async function admin(request, env, url) {
   if (mt && m === 'DELETE') {
     await DB.prepare('DELETE FROM tickets WHERE id = ?1').bind(mt[1]).run();
     return json({ ok: true });
-  }
-  if (p === '/forges' && m === 'GET') {
-    const r = await DB.prepare('SELECT * FROM forges ORDER BY created_at DESC LIMIT 200').all();
-    return json({ ok: true, forges: r.results.map(parseRow) });
   }
   mt = p.match(/^\/forges\/(F-[a-z0-9]{10})$/);
   if (mt && m === 'DELETE') {
@@ -326,9 +358,13 @@ export default {
     if (p.startsWith('/admin/')) return Response.redirect(url.origin + '/admin', 302);
     if (p.startsWith('/api/')) {
       if (request.method === 'OPTIONS') return preflight(request, env);
+      const t0 = Date.now();
       let res;
       try { res = await api(request, env, ctx, url); }
       catch (e) { console.error(e); res = fail(e && e.status ? e.status : 500, e && e.status ? e.message : 'erreur interne'); }
+      // durée côté serveur, visible dans l'onglet Réseau du navigateur
+      res = new Response(res.body, res);
+      res.headers.set('server-timing', `app;dur=${Date.now() - t0}`);
       return p.startsWith('/api/admin/') ? res : withCors(res, request, env);
     }
     if (env.ASSETS) return env.ASSETS.fetch(request);

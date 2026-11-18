@@ -9,7 +9,7 @@ Portfolio « KNIGHT.OS » : la mécanique de [zenobasi.com](https://zenobasi.com
 - **KALISO** (commande `forge`) : le visiteur décrit sa quête, un modèle open source (Workers AI) en tire un plan de bataille ; la fourchette de prix vient de ta grille, jamais du modèle. Le plan devient un ticket en un mot.
 - **Tickets** : envoyés à ton API, rangés dans ton **dashboard privé** (`/admin`), suivis par le visiteur avec `status`.
 - **Forge allumée** : ta disponibilité sur l'accueil, réglée d'un clic dans le dashboard.
-- **Trois langues** : français, anglais, arabe (de droite à gauche), sélecteur dans le menu ou `lang` dans le terminal.
+- **Deux langues** : français et anglais, sélecteur dans le menu ou `lang` dans le terminal.
 - **Sept sceaux** cachés dans le site (solutions : `docs/secrets.md`, attention divulgâcheur).
 
 Le site tient dans un seul fichier HTML généré, sans framework : GSAP, Lenis et three.js sont chargés depuis jsDelivr, les polices depuis Google Fonts. L'API est un Worker Cloudflare (`worker/`).
@@ -22,10 +22,10 @@ Le site tient dans un seul fichier HTML généré, sans framework : GSAP, Lenis 
 src/
   template.html     coquille HTML (nav, menu, écran de chargement, balises d'aperçu)
   style.css         styles
-  projets/*.md      ← UNE FICHE PAR PROJET (FR / EN / AR + étude de cas) — gabarit : docs/gabarit-etude-de-cas.md
+  projets/*.md      ← UNE FICHE PAR PROJET (FR / EN + étude de cas) — gabarit : docs/gabarit-etude-de-cas.md
   js/               modules, concaténés dans l'ordre alphabétique
     00-config.js    ← LE CONTENU : nom, email, couleur, textes, musique, adresse de l'API…
-    00b-i18n.js     traductions (interface + textes EN / AR)
+    00b-i18n.js     traductions (interface + textes anglais)
     00c-api.js      appels à l'API (KALISO, tickets, forge allumée)
     01-utils.js     utilitaires, couleur d'accent
     01b-sfx-data.js son d'épée (mp3 en base64)
@@ -63,7 +63,7 @@ Le contenu se règle dans `src/js/00-config.js` (objet `SITE`) :
 - `accent` : `zellige` (#127d5f, par défaut), `vert`, `ambre`, `laiton`, `majorelle`, `marrakech`. Les visiteurs peuvent aussi essayer `theme <couleur>` dans le terminal.
 - `music` : fichier, volume, début (saut du silence initial), `gate` (invite « dégainer » en fin de chargement).
 - `api` : vide = l'API est à la même adresse que le site (tout sur Cloudflare). Sans API joignable, tout se replie : la forge reste « allumée » et les tickets partent par email prérempli.
-- Les textes anglais et arabes sont dans `src/js/00b-i18n.js` (`SITE_I18N`). Les projets portent leurs propres traductions.
+- Les textes anglais sont dans `src/js/00b-i18n.js` (`SITE_I18N`). Les projets portent leurs propres traductions.
 
 Les projets d'exemple de `src/projets/` sont fictifs (`"exemple": true`) : remplace-les par tes vraies réalisations avec le gabarit `docs/gabarit-etude-de-cas.md`, à donner au Claude de chaque projet.
 

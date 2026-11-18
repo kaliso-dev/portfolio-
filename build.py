@@ -14,7 +14,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).parent
 SRC = ROOT / "src"
-LANGS = ("fr", "en", "ar")
+LANGS = ("fr", "en")
 SECTIONS = ("quete", "claude", "decisions", "resultats")
 UNITES = ("heures", "jours", "semaines", "mois")
 EMBLEMS = ("sword", "tower", "crown", "key", "shield", "chalice", "helm")
@@ -85,8 +85,8 @@ def parse_projet(f):
         return None
     rest = text[: m.start()] + text[m.end():]
 
-    # sections de premier niveau : # fr, # en, # ar, # code
-    parts = re.split(r"^#\s+(fr|en|ar|code)\s*$", rest, flags=re.M | re.I)
+    # sections de premier niveau : # fr, # en, # code
+    parts = re.split(r"^#\s+(fr|en|code)\s*$", rest, flags=re.M | re.I)
     story, code = {}, fiche.get("code", "")
     for i in range(1, len(parts), 2):
         key, body = parts[i].lower(), parts[i + 1]
@@ -132,7 +132,7 @@ def parse_projet(f):
     for k in ("type", "services", "description", "notes", "stats"):
         if k not in i18n["fr"]:
             warn(f, f"champ fr.{k} manquant")
-    for lang in ("en", "ar"):
+    for lang in ("en",):
         if lang not in i18n:
             warn(f, f"pas de traduction {lang} (le français sera affiché)")
     for lang, b in i18n.items():

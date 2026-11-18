@@ -23,7 +23,7 @@ function footerHTML(variant) {
 
 /* --- forge allumée : témoin de disponibilité (réglé depuis le dashboard) ---- */
 function lampHTML() {
-  return `<a class="forge-lamp${FORGE.lit ? ' is-lit' : ''}" href="#terminal" data-lamp aria-live="polite">
+  return `<a class="forge-lamp${FORGE.lit ? ' is-lit' : ''}" href="#forge" data-lamp aria-live="polite">
     <span class="fl-ember" aria-hidden="true"><i></i><i></i><i></i></span>
     <span class="fl-text"><span class="fl-label">${esc(FORGE.label())}</span><span class="fl-sub">${esc(FORGE.sub())}</span></span>
   </a>`;
@@ -31,8 +31,7 @@ function lampHTML() {
 function bindLamp(root) {
   const lamp = $('[data-lamp]', root);
   if (!lamp) return () => {};
-  // un clic : direction le terminal, KALISO prêt à écouter (ou le ticket si la forge est éteinte)
-  lamp.addEventListener('click', () => { try { sessionStorage.setItem('kaliso-run', FORGE.lit ? 'forge' : 'ticket'); } catch (e) {} });
+  // un clic : direction la forge visuelle, KALISO prêt à écouter
   const upd = () => {
     lamp.classList.toggle('is-lit', FORGE.lit);
     $('.fl-label', lamp).textContent = FORGE.label();
@@ -378,7 +377,7 @@ function PageContact() {
       <h1 class="sr-only">${esc(t('title.contact'))}</h1>
       <p class="inquire-copy text-large" data-copy="lines">${esc(C.copy)}</p>
       <p class="inquire-note" data-copy="lines">${esc(SITE.email)} — ${esc([t('contact.reply'), t('contact.written')].filter(Boolean).join(' · '))}</p>
-      <a class="inquire-forge" href="#terminal" data-forge-cta><span class="fl-ember" aria-hidden="true"><i></i><i></i><i></i></span>${esc(t('contact.forge'))} <span aria-hidden="true">${RTL ? '←' : '→'}</span></a>
+      <a class="inquire-forge" href="#forge" data-forge-cta><span class="fl-ember" aria-hidden="true"><i></i><i></i><i></i></span>${esc(t('contact.forge'))} <span aria-hidden="true">${RTL ? '←' : '→'}</span></a>
       <ul class="inquire-links" data-copy="items">
         <li><a href="mailto:${esc(SITE.email)}" data-roll>${esc(t('contact.email'))}</a></li>
         ${SITE.socials.map((s) => `<li><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer" data-roll>${esc(s.label)}<span class="sr-only"> ${esc(t('contact.newTab'))}</span></a></li>`).join('')}
@@ -400,7 +399,6 @@ function PageContact() {
       page.timers.push(setTimeout(() => scrambleTo(btn, t('contact.copy'), 0.5), 2200));
     });
     const cta = $('[data-forge-cta]', el);
-    cta.addEventListener('click', () => { try { sessionStorage.setItem('kaliso-run', 'forge'); } catch (e) {} });
     gsap.set(cta, { opacity: 0, y: 12 });
   };
   page.intro = (delay = 0) => {

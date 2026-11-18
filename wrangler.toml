@@ -18,7 +18,7 @@ binding = "AI"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "kaliso"
+database_name = "kaliso-eu"
 database_id = "REMPLACE-MOI-PAR-L-ID-DONNE-PAR-WRANGLER"
 migrations_dir = "worker/migrations"
 

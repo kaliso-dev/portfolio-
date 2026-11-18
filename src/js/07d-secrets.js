@@ -64,7 +64,7 @@ const Seals = {
       const tag = (e.target && e.target.tagName) || '';
       if (/INPUT|TEXTAREA|SELECT/.test(tag) || e.key.length !== 1) return;
       buf = (buf + e.key.toLowerCase()).slice(-8);
-      if (buf.endsWith('salam') || buf.endsWith('سلام')) { buf = ''; this.find('salam'); }
+      if (buf.endsWith('salam')) { buf = ''; this.find('salam'); }
     });
     window.kaliso = {
       sceau: () => (this.find('console') ? '⟐' : '⟐ ' + this.count() + '/' + SEALS.length),

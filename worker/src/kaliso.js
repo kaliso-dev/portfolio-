@@ -5,7 +5,7 @@
    ========================================================================== */
 import { TYPES, MODULES } from './constantes.js';
 
-const LANG_NAME = { fr: 'French', en: 'English', ar: 'Modern Standard Arabic' };
+const LANG_NAME = { fr: 'French', en: 'English' };
 
 export const MODEL_LABELS = {
   '@cf/mistralai/mistral-small-3.1-24b-instruct': 'Mistral Small 3.1',
@@ -82,7 +82,7 @@ export function parseJson(raw) {
 const str = (v, max) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, max) : '');
 const list = (v, n, max) => (Array.isArray(v) ? v.map((x) => str(typeof x === 'string' ? x : (x && (x.name || x.title)) || '', max)).filter(Boolean).slice(0, n) : []);
 // le modèle ne doit pas chiffrer : on retire toute ligne qui ressemble à un prix ou une durée
-const PRICEY = /(\d[\d\s.,]*\s?(€|eur|euros?|\$|usd|dh|mad|درهم|يورو))|(\d+\s?(jours?|semaines?|mois|days?|weeks?|months?|أيام|أسابيع|أشهر|شهر|أسبوع))/i;
+const PRICEY = /(\d[\d\s.,]*\s?(€|eur|euros?|\$|usd|dh|mad))|(\d+\s?(jours?|semaines?|mois|days?|weeks?|months?))/i;
 const noPrice = (arr) => arr.filter((x) => !PRICEY.test(x));
 
 export function normalize(o) {

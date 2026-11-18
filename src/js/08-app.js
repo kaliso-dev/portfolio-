@@ -5,7 +5,7 @@ const App = { page: null, key: null, busy: false, silent: false, lenis: null, bg
 
 function parseRoute() {
   const k = decodeURIComponent(location.hash.replace(/^#/, '')) || 'index';
-  if (['index', 'projets', 'a-propos', 'contact', 'terminal'].includes(k)) return { key: k };
+  if (['index', 'projets', 'a-propos', 'contact', 'terminal', 'forge'].includes(k)) return { key: k };
   if (k.startsWith('projet-')) {
     const i = SITE.projects.findIndex((p) => p.slug === k.slice(7));
     if (i >= 0) return { key: k, project: i };
@@ -20,6 +20,7 @@ function createPage(route) {
     case 'a-propos': return PageAbout();
     case 'contact': return PageContact();
     case 'terminal': return PageTerminal();
+    case 'forge': return PageForge();
     case '404': return PageNotFound();
     default: return route.project != null ? PageProject(route.project) : PageNotFound();
   }
@@ -49,7 +50,7 @@ function updateCurrent() {
   $$('.menu-link').forEach((a) => {
     if (a.getAttribute('href') === `#${k}`) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
-  const titles = { index: SITE.role, projets: t('title.work'), 'a-propos': t('title.about'), contact: t('title.contact'), terminal: t('title.terminal'), '404': t('title.404') };
+  const titles = { index: SITE.role, projets: t('title.work'), 'a-propos': t('title.about'), contact: t('title.contact'), terminal: t('title.terminal'), forge: t('title.forge'), '404': t('title.404') };
   const p = SITE.projects.find((x) => `projet-${x.slug}` === App.key);
   document.title = `${p ? p.name + p.ext : titles[App.key] || ''} — ${SITE.name}`;
 }
@@ -351,7 +352,7 @@ async function boot() {
   // sélecteur de langue (menu)
   const ml = $('.menu-lang');
   if (ml) {
-    ml.innerHTML = LANGS.map((l) => `<button type="button" lang="${l}" data-lang="${l}" aria-pressed="${l === LANG}" aria-label="${esc(LANG_NAMES[l])}">${l === 'ar' ? 'ع' : l.toUpperCase()}</button>`).join('<span aria-hidden="true">/</span>');
+    ml.innerHTML = LANGS.map((l) => `<button type="button" lang="${l}" data-lang="${l}" aria-pressed="${l === LANG}" aria-label="${esc(LANG_NAMES[l])}">${l.toUpperCase()}</button>`).join('<span aria-hidden="true">/</span>');
     ml.addEventListener('click', (e) => { const b = e.target.closest('[data-lang]'); if (b) { Sound.play('select'); setLang(b.dataset.lang); } });
   }
   document.title = `${SITE.name} — ${SITE.role}`;

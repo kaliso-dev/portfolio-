@@ -44,14 +44,14 @@ window.addEventListener('pointermove', (e) => {
 const RAMP = ' .:;+*xoX#&$'; // trié par encre réelle (Geist Mono 500)
 /* --- couleur d'accent (changeable : commande « theme » du terminal) ------ */
 const ACCENTS = {
-  zellige: { hex: '#127d5f', label: ['vert zellige', 'zellige green', 'أخضر الزليج'] },
-  vert: { hex: '#4ade80', label: ['vert terminal', 'terminal green', 'أخضر الطرفية'] },
-  ambre: { hex: '#f2a24a', label: ['ambre de forge', 'forge amber', 'كهرمان الكير'] },
-  laiton: { hex: '#d9b46a', label: ['laiton de Fès', 'Fez brass', 'نحاس فاس'] },
-  majorelle: { hex: '#7b86ff', label: ['bleu Majorelle', 'Majorelle blue', 'أزرق ماجوريل'] },
-  marrakech: { hex: '#ec5b43', label: ['rouge Marrakech', 'Marrakech red', 'أحمر مراكش'] },
+  zellige: { hex: '#127d5f', label: ['vert zellige', 'zellige green'] },
+  vert: { hex: '#4ade80', label: ['vert terminal', 'terminal green'] },
+  ambre: { hex: '#f2a24a', label: ['ambre de forge', 'forge amber'] },
+  laiton: { hex: '#d9b46a', label: ['laiton de Fès', 'Fez brass'] },
+  majorelle: { hex: '#7b86ff', label: ['bleu Majorelle', 'Majorelle blue'] },
+  marrakech: { hex: '#ec5b43', label: ['rouge Marrakech', 'Marrakech red'] },
   // récompense des sept sceaux (07d-secrets.js)
-  or: { hex: '#e3b23c', label: ['or des sept sceaux', 'gold of the seven seals', 'ذهب الأختام السبعة'], secret: true },
+  or: { hex: '#e3b23c', label: ['or des sept sceaux', 'gold of the seven seals'], secret: true },
 };
 const accentLabel = (k) => { const l = ACCENTS[k].label; return Array.isArray(l) ? (l[LI] || l[0]) : l; };
 const sealsDone = () => { try { return JSON.parse(localStorage.getItem('kaliso-seals') || '[]').length >= 7; } catch (e) { return false; } };

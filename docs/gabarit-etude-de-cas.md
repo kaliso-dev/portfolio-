@@ -3,7 +3,7 @@
 > **À qui s'adresse ce fichier ?** À Claude, dans le dépôt d'un projet de Sofiene Lamsouni.
 > Sofiene te donne ce gabarit. Il attend en retour **un seul fichier** : `<slug>.md`, rédigé
 > exactement dans le format ci-dessous. Il le déposera dans `src/projets/` de son portfolio
-> (dépôt `kaliso-dev/portfolio-`). Le site le lira tel quel, en français, en anglais et en arabe.
+> (dépôt `kaliso-dev/portfolio-`). Le site le lira tel quel, en français et en anglais.
 
 ---
 
@@ -14,7 +14,7 @@
 2. **Pose tes questions à Sofiene** avant d'écrire (une seule liste, courte). Demande-lui ce que le dépôt ne
    peut pas dire : le contexte client, les chiffres de résultat, l'estimation de départ, ce qu'il a décidé seul.
 3. **Rédige le fichier `<slug>.md`** au format exact de la section 3, en **français**, puis traduis-le
-   en **anglais** et en **arabe**.
+   en **anglais**.
 4. **Relis avec la check-list** (section 6) et livre le fichier.
 
 ## 2. Règles d'or
@@ -32,10 +32,8 @@
   premières versions, tests, documentation, migrations, traductions, prototypes… La section `decisions`
   dit ce que Sofiene a tranché lui-même : architecture, choix techniques, arbitrages, refus, relecture.
   N'exagère ni l'un ni l'autre.
-- **Traductions.** L'anglais et l'arabe sont des réécritures naturelles, pas du mot à mot. Arabe : arabe
-  standard moderne, clair et sobre ; garde en caractères latins les noms de technologies, de produits et de
-  marques (Next.js, Stripe, Claude…). Garde les mêmes chiffres dans les trois langues (en arabe, chiffres
-  occidentaux 0-9, comme au Maroc ; tu peux écrire « 12 ألف » pour « 12k »).
+- **Traduction.** L'anglais est une réécriture naturelle, pas du mot à mot. Garde les mêmes chiffres dans
+  les deux langues et les noms de technologies, de produits et de marques tels quels (Next.js, Stripe, Claude…).
 
 ## 3. Le format exact du fichier
 
@@ -43,7 +41,7 @@ Le fichier contient, dans cet ordre :
 
 1. un commentaire HTML d'une ligne (facultatif) ;
 2. **un bloc ```json** : la fiche projet ;
-3. trois sections `# fr`, `# en`, `# ar`, chacune avec quatre sous-sections `## quete`, `## claude`,
+3. deux sections `# fr` et `# en`, chacune avec quatre sous-sections `## quete`, `## claude`,
    `## decisions`, `## resultats` (ces identifiants ne se traduisent pas) ;
 4. une section `# code` avec un seul bloc de code.
 
@@ -69,15 +67,14 @@ Le fichier contient, dans cet ordre :
     "notes": ["Première note…", "Seconde note…"],
     "stats": [["0.8s", "Chargement mobile"], ["+212%", "Ventes en ligne"], ["3", "Langues"], ["1 400", "Produits"]]
   },
-  "en": { "type": "…", "services": ["…"], "description": ["…", "…"], "notes": ["…", "…"], "stats": [["…", "…"]] },
-  "ar": { "type": "…", "services": ["…"], "description": ["…", "…"], "notes": ["…", "…"], "stats": [["…", "…"]] }
+  "en": { "type": "…", "services": ["…"], "description": ["…", "…"], "notes": ["…", "…"], "stats": [["…", "…"]] }
 }
 ```
 
 | Champ | Contenu | Contraintes |
 |---|---|---|
 | `slug` | identifiant dans l'URL (`#projet-slug`) et nom du fichier | minuscules, chiffres, tirets ; unique |
-| `name` | nom affiché en grand | MAJUSCULES, 3 à 10 caractères idéalement (un mot arabe translittéré marche très bien : SOUK, NOUR, BARID…) |
+| `name` | nom affiché en grand | MAJUSCULES, 3 à 10 caractères idéalement (un mot arabe écrit en lettres latines marche très bien : SOUK, NOUR, BARID…) |
 | `ext` | « extension » décorative qui dit la nature du projet | `.app`, `.api`, `.shop`, `.saas`, `.ai`, `.bot`, `.cli`, `.site`, `.tool`… |
 | `year` | année de livraison | nombre |
 | `order` | position dans l'armurerie (1 = premier) | nombre |
@@ -139,8 +136,7 @@ le passage le plus parlant (le cœur métier, pas un import). Commentaires en fr
     "notes": ["Le configurateur compose le motif en direct, carreau par carreau.", "Chaque traduction a été relue par l'atelier avant publication."],
     "stats": [["0.8s", "Chargement mobile"], ["+212%", "Ventes en ligne"], ["3", "Langues"], ["1 400", "Carreaux"]]
   },
-  "en": { "type": "Online shop", "services": ["E-commerce", "Showcase website", "Online payment"], "description": ["…", "…"], "notes": ["…", "…"], "stats": [["0.8s", "Mobile load time"], ["+212%", "Online sales"], ["3", "Languages"], ["1,400", "Tiles"]] },
-  "ar": { "type": "متجر إلكتروني", "services": ["التجارة الإلكترونية", "موقع تعريفي", "الدفع الإلكتروني"], "description": ["…", "…"], "notes": ["…", "…"], "stats": [["0.8s", "التحميل على الجوّال"], ["+212%", "المبيعات عبر الإنترنت"], ["3", "لغات"], ["1400", "قطعة"]] }
+  "en": { "type": "Online shop", "services": ["E-commerce", "Showcase website", "Online payment"], "description": ["…", "…"], "notes": ["…", "…"], "stats": [["0.8s", "Mobile load time"], ["+212%", "Online sales"], ["3", "Languages"], ["1,400", "Tiles"]] }
 }
 ```
 
@@ -181,23 +177,6 @@ Des pages chargées en moins d'une seconde sur mobile, des ventes en ligne multi
 
 …
 
-# ar
-
-## quete
-
-…
-
-## claude
-
-…
-
-## decisions
-
-…
-
-## resultats
-
-…
 
 # code
 
@@ -210,7 +189,7 @@ export default async function Carreau({ params }: { params: { slug: string } }) 
 ```
 ````
 
-Un exemple complet et réel du format, en trois langues, se trouve dans le portfolio :
+Un exemple complet et réel du format, en deux langues, se trouve dans le portfolio :
 `src/projets/souk.md`.
 
 ## 5. Ce que Sofiene fait ensuite
@@ -223,10 +202,10 @@ Un exemple complet et réel du format, en trois langues, se trouve dans le portf
 ## 6. Check-list avant de livrer
 
 - [ ] Le JSON est valide (guillemets droits `"`, pas de virgule en trop, apostrophes françaises autorisées dans les textes).
-- [ ] `fr`, `en` et `ar` contiennent les mêmes champs, dans le même ordre, avec les mêmes chiffres.
+- [ ] `fr` et `en` contiennent les mêmes champs, dans le même ordre, avec les mêmes chiffres.
 - [ ] Exactement 3 `services`, 2 `description`, 2 `notes`, 4 `stats`.
 - [ ] `emblem` fait partie de la liste ; `hue` entre 0 et 360 ; `unite` en français.
-- [ ] Les trois récits ont leurs quatre sections, identifiants non traduits (`quete`, `claude`, `decisions`, `resultats`).
+- [ ] Les deux récits ont leurs quatre sections, identifiants non traduits (`quete`, `claude`, `decisions`, `resultats`).
 - [ ] Aucun chiffre inventé : les inconnues sont des `"?"` signalés à Sofiene.
 - [ ] Aucun secret, aucune donnée personnelle, aucun client nommé sans accord.
 - [ ] L'extrait de code est réel, 8 à 16 lignes, commenté en français.
