@@ -11,10 +11,10 @@ const TERM_BANNER = [
 const TICKET_STEPS = [
   { k: 'nom', q: 'Ton nom, ou celui de ta structure', v: (s) => s.length >= 2 || 'au moins 2 caractères' },
   { k: 'email', q: 'Ton email (pour te répondre)', v: (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s) || 'email invalide' },
-  { k: 'type', q: 'Type de projet', opts: ['Site vitrine', 'Application web', 'API / back-end', 'Expérience WebGL / 3D', 'Audit / maintenance', 'Autre'] },
+  { k: 'type', q: 'Quel type de quête ?', opts: ['Site vitrine', 'Site e-commerce', 'Application web / SaaS', 'Application mobile', 'API / back-end', 'Agent IA / automatisation', 'Outil interne / intégration', 'Autre : tout le reste'] },
   { k: 'budget', q: 'Budget estimé', opts: ['< 2 k€', '2 – 5 k€', '5 – 10 k€', '10 k€ et +', 'À définir ensemble'] },
   { k: 'delai', q: 'Délai souhaité', opts: ['Urgent (< 2 semaines)', 'Sous 1 mois', '2 – 3 mois', 'Flexible'] },
-  { k: 'message', q: 'Décris ton besoin en quelques lignes', v: (s) => s.length >= 10 || 'un peu plus de détails (10 caractères minimum)' },
+  { k: 'message', q: 'Décris ta quête en quelques lignes', v: (s) => s.length >= 10 || 'un peu plus de détails (10 caractères minimum)' },
 ];
 const TERM_PAGES = { index: 'index', '~': 'index', accueil: 'index', projets: 'projets', work: 'projets', 'a-propos': 'a-propos', about: 'a-propos', contact: 'contact' };
 
@@ -62,7 +62,7 @@ function PageTerminal() {
           <input id="term-in" class="term-in" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" enterkeyhint="send" aria-label="Commande">
         </form>
       </div>
-      <div class="term-chips">${['help', 'ticket', 'ls', 'whoami', 'theme'].map((c) => `<button type="button" data-run="${c}">${c}</button>`).join('')}</div>
+      <div class="term-chips">${['help', 'ticket', 'claude', 'ls', 'whoami', 'theme'].map((c) => `<button type="button" data-run="${c}">${c}</button>`).join('')}</div>
     </div></section>
   </div>`);
   const out = $('.term-out', el), input = $('.term-in', el), ps1 = $('.term-ps1', el), form = $('.term-line', el);
@@ -91,7 +91,7 @@ function PageTerminal() {
   const CMDS = {
     help: { d: 'cette aide', run() {
       const rows = [['whoami', 'qui suis-je'], ['ls', 'lister les projets'], ['open <projet>', 'ouvrir un projet'], ['cat about.md', 'à propos, en bref'],
-        ['ticket', 'ouvrir une demande (devis, mission, question)'], ['status [id]', 'suivre mes tickets'], ['contact', 'email et réseaux'],
+        ['ticket', 'ouvrir une quête (devis, mission, question)'], ['claude', 'mon second sabre'], ['status [id]', 'suivre mes tickets'], ['contact', 'email et réseaux'],
         ['theme [couleur]', 'changer la couleur d\'accent'], ['cd <page>', 'index · projets · a-propos · contact'], ['clear', 'effacer l\'écran']];
       print(rows.map(([c, d]) => `  ${cmdLink(c.split(' ')[0] === 'cat' ? 'cat about.md' : c.split(' ')[0], c)}${' '.repeat(Math.max(2, 18 - c.length))}<span class="dim">${esc(d)}</span>`).join('\n'));
       say('  ↑ ↓ historique · Tab complète · Ctrl+C annule', 'dim');
@@ -150,6 +150,12 @@ function PageTerminal() {
     echo: { hidden: true, run(arg) { say(arg || ''); } },
     history: { hidden: true, run() { hist.forEach((c, i) => say(`${String(i + 1).padStart(3)}  ${c}`, 'dim')); } },
     sudo: { hidden: true, run() { say('permission refusée : seul le chevalier détient la clé.', 'err'); } },
+    claude: { d: 'mon second sabre', run() {
+      print(`<span class="acc">claude</span> <span class="dim">— l'IA d'Anthropic, mon compagnon de forge</span>`);
+      wrapText('Je développe avec Claude au quotidien : il écrit vite, propose, explore ; je tiens la lame. Architecture, choix techniques, relecture ligne à ligne, sécurité, finition : tout passe par moi avant de partir en production.', cols()).forEach((l) => say(l));
+      wrapText('Le résultat : la cadence d\'une équipe, la cohérence d\'un seul artisan. Sites, apps, API, SaaS, agents IA, automatisations… aucune quête n\'est hors de portée.', cols()).forEach((l) => say(l, 'dim'));
+      print(`<span class="dim">prêt ?</span> ${cmdLink('ticket')}`);
+    } },
     exit: { hidden: true, run() { say('déconnexion…', 'dim'); page.timers.push(setTimeout(() => go('#index'), 300)); } },
     sound: { hidden: true, run(arg) { if ((arg === 'on') !== Sound.on) Sound.toggle(); say('son : ' + (Sound.on ? 'activé' : 'coupé'), 'dim'); } },
     banner: { hidden: true, run() { printBanner(); } },
@@ -165,7 +171,7 @@ function PageTerminal() {
   }
   function startTicket() {
     wiz = { i: 0, data: {}, confirm: false };
-    say('nouveau ticket — Ctrl+C ou « annuler » pour abandonner', 'dim');
+    say('nouvelle quête — Ctrl+C ou « annuler » pour rebrousser chemin', 'dim');
     askStep();
   }
   function endTicket(msg) { wiz = null; setPS(PS1); if (msg) say(msg, 'dim'); }
@@ -198,7 +204,7 @@ function PageTerminal() {
       priorite: /Urgent/.test(wiz.data.delai) ? 'haute' : /1 mois/.test(wiz.data.delai) ? 'normale' : 'basse',
       date: d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) };
     print(esc(ticketText(wiz.ticket, Math.min(cols(), 56))), 'pre');
-    print(`<span class="acc">?</span> Envoyer ce ticket ? ${cmdLink('o', '[o]ui')} / ${cmdLink('n', '[n]on')}`);
+    print(`<span class="acc">?</span> Envoyer ce ticket au forgeron ? ${cmdLink('o', '[o]ui')} / ${cmdLink('n', '[n]on')}`);
     wiz.confirm = true;
     setPS('ticket/envoyer ›');
   }
@@ -311,7 +317,7 @@ function PageTerminal() {
     page.timers.push(setTimeout(() => {
       printBanner();
       print(`<span class="dim">${esc(SITE.os)} ${esc(SITE.version)} — terminal de</span> <span class="acc">${esc(SITE.name)}</span>`);
-      print(`tape ${cmdLink('help')} pour la liste des commandes, ou ${cmdLink('ticket')} pour ouvrir une demande.`);
+      print(`tape ${cmdLink('help')} pour la liste des commandes, ${cmdLink('ticket')} pour ouvrir une quête, ou ${cmdLink('claude')} pour savoir comment je travaille.`);
       if (!IS_TOUCH) input.focus({ preventScroll: true });
     }, (delay + 0.5) * 1000));
   };

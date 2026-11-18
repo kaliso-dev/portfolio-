@@ -15,8 +15,8 @@ function footerHTML(variant) {
     </div></footer>`;
   }
   return `<footer class="${variant === 'pinned' ? 'footer-pinned' : ''}"><div class="container">
-    <div class="footer-group" data-copy="items"${variant === 'credits' ? ' data-scroll' : ''}><p class="footer-label"><span>${esc(SITE.name)} © ${y}</span></p><p><span>Tous droits réservés</span></p></div>
-    <div class="footer-group" data-copy="items"${variant === 'credits' ? ' data-scroll' : ''}><p class="footer-label"><span>Dire bonjour</span></p><p><a href="mailto:${esc(SITE.email)}" data-roll>${esc(SITE.email)}</a></p></div>
+    <div class="footer-group" data-copy="items"${variant === 'credits' ? ' data-scroll' : ''}><p class="footer-label"><span>${esc(SITE.name)} © ${y}</span></p><p><span>Forgé à la main, avec Claude</span></p></div>
+    <div class="footer-group" data-copy="items"${variant === 'credits' ? ' data-scroll' : ''}><p class="footer-label"><span>Dire salam</span></p><p><a href="mailto:${esc(SITE.email)}" data-roll>${esc(SITE.email)}</a></p></div>
     <div class="footer-group" data-copy="items"${variant === 'credits' ? ' data-scroll' : ''}><p class="footer-label"><span>Système</span></p><p><span>${esc(SITE.os)} ${esc(SITE.version)}</span></p></div>
   </div></footer>`;
 }
@@ -143,8 +143,8 @@ function PageProject(i) {
       <div class="container project-info"><p data-copy="lines">${esc(p.type)}</p><p data-copy="lines">${p.year}</p></div>
     </section>
     <section class="project-overview"><div class="container">
-      <div class="project-list"><h2 class="project-label text-small" data-copy="lines" data-scroll>// services</h2><ul data-copy="items" data-scroll>${li(p.services)}</ul></div>
-      <div class="project-list"><h2 class="project-label text-small" data-copy="lines" data-scroll>// stack</h2><ul data-copy="items" data-scroll>${li(p.stack)}</ul></div>
+      <div class="project-list"><h2 class="project-label text-small" data-copy="lines" data-scroll>// la quête</h2><ul data-copy="items" data-scroll>${li(p.services)}</ul></div>
+      <div class="project-list"><h2 class="project-label text-small" data-copy="lines" data-scroll>// l'arsenal</h2><ul data-copy="items" data-scroll>${li(p.stack)}</ul></div>
       <div class="project-copy">
         ${p.description.map((t) => `<p class="text-large" data-copy="lines" data-scroll>${esc(t)}</p>`).join('')}
         <ul class="project-links" data-copy="items" data-scroll>
@@ -162,7 +162,7 @@ function PageProject(i) {
     </div></section>
     <div class="project-shots"><div class="container">${frame(shots[3])}</div></div>
     <section class="project-next">
-      <div class="container" data-copy="items" data-scroll><p class="project-label"><span>Projet suivant</span></p><h2><a href="#projet-${next.slug}" data-roll>${esc(next.name + next.ext)}</a></h2></div>
+      <div class="container" data-copy="items" data-scroll><p class="project-label"><span>Quête suivante</span></p><h2><a href="#projet-${next.slug}" data-roll>${esc(next.name + next.ext)}</a></h2></div>
       ${footerHTML('credits')}
     </section>
   </article>`);
@@ -243,14 +243,14 @@ function PageAbout() {
       </div>
     </div></div></div>
     <section class="about-info"><div class="container">
-      <div class="info-list"><h2 class="info-label text-small" data-copy="lines" data-scroll>$ ls ./competences</h2><ul data-copy="items" data-scroll>${li(A.skills)}</ul></div>
-      <div class="info-list"><h2 class="info-label text-small" data-copy="lines" data-scroll>$ ls ./stack</h2><ul data-copy="items" data-scroll>${li(A.stack)}</ul></div>
+      <div class="info-list"><h2 class="info-label text-small" data-copy="lines" data-scroll>$ ls ./savoir-faire</h2><ul data-copy="items" data-scroll>${li(A.skills)}</ul></div>
+      <div class="info-list"><h2 class="info-label text-small" data-copy="lines" data-scroll>$ ls ./arsenal</h2><ul data-copy="items" data-scroll>${li(A.stack)}</ul></div>
       <p class="about-copy text-large" data-copy="lines" data-scroll>${esc(A.copy)}</p>
     </div></section>
     <section class="about-credits"><div class="container">
-      <h2 class="credits-label text-small" data-copy="lines" data-scroll>$ cat experience.log</h2>
+      <h2 class="credits-label text-small" data-copy="lines" data-scroll>$ cat campagnes.log</h2>
       <ul class="credits-list" data-copy="items" data-scroll>${A.experience.map(([y, t]) => `<li><span><span class="yr">${esc(y)}</span>${esc(t)}</span></li>`).join('')}</ul>
-      <h2 class="credits-label text-small" data-copy="lines" data-scroll>$ ls ./clients</h2>
+      <h2 class="credits-label text-small" data-copy="lines" data-scroll>$ ls ./allies</h2>
       <ul class="credits-list" data-copy="items" data-scroll>${li(A.clients)}</ul>
       <div class="logo"><div class="knight-host"></div></div>
     </div></section>
@@ -362,9 +362,9 @@ function PageNotFound() {
   const el = h(`<div class="nf">
     <section class="not-found"><div class="container">
       <pre class="not-found-ascii" aria-hidden="true">${esc(asciiArt('helm', 40, 20))}</pre>
-      <p class="not-found-note" data-copy="lines">Erreur 404 — route introuvable</p>
-      <h1 class="not-found-copy" data-copy="lines">Cette page a été déplacée, ou n'a jamais existé.</h1>
-      <ul class="not-found-links" data-copy="items"><li><a href="#index" data-roll>Retour à l'index</a></li><li><a href="#projets" data-roll>Voir les projets</a></li></ul>
+      <p class="not-found-note" data-copy="lines">Erreur 404 — piste perdue dans le désert</p>
+      <h1 class="not-found-copy" data-copy="lines">Cette page s'est perdue dans les sables, ou n'a jamais existé.</h1>
+      <ul class="not-found-links" data-copy="items"><li><a href="#index" data-roll>Retour au campement</a></li><li><a href="#projets" data-roll>Voir l'armurerie</a></li></ul>
     </div></section>
     ${footerHTML('pinned')}
   </div>`);

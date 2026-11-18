@@ -232,10 +232,10 @@ function runPreloader(onReveal) {
   });
   const lines = [
     [`${SITE.os} ${SITE.version} — démarrage`, ''],
-    ['montage /dev/armure ........ ', 'ok'],
-    [`glyphes [${RAMP.trim()}] .. `, 'ok'],
-    ['trempe de la lame .......... ', 'ok'],
-    ['statut 200 — bienvenue', ''],
+    ['allumage de la forge ....... ', 'ok'],
+    ['invocation de claude ....... ', 'ok'],
+    ['trempe du cimeterre ........ ', 'ok'],
+    ['statut 200 — marhaba', ''],
   ];
   lines.forEach(([txt, ok], i) => {
     tl.call(() => {

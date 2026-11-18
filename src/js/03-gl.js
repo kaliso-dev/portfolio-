@@ -313,16 +313,38 @@ uniform vec2 uRes; uniform float uDpr; uniform float uP; uniform float uGlow; un
 uniform vec2 uC; uniform float uAng; uniform sampler2D uGlyph; uniform float uN; uniform vec2 uCell;
 out vec4 o;
 __NOISE__
+// cimeterre (kilij) : la pointe file sur la ligne de coupe, la lame s'incurve vers la poignée
+float scimC(float u, float bl, float S){
+  float t = -u / bl;
+  if (t <= 0.0) return 0.0;
+  if (t <= 1.0) return 0.17 * S * t * t;
+  return 0.17 * S + 0.34 * S * (t - 1.0);
+}
 float sdSword(vec2 q, float S){
-  float u = q.x, v = abs(q.y);
-  float bl = S;
-  float w = 0.024 * S * (1.0 - smoothstep(-0.2 * S, 0.0, u));
-  float blade = (u > -bl && u < 0.0) ? v - w : 1e5;
-  vec2 g = vec2(u + bl, v);
-  float guard = max(abs(g.x) - 0.016 * S, g.y - 0.12 * S);
-  vec2 gr = vec2(u + bl + 0.11 * S, v);
-  float grip = max(abs(gr.x) - 0.095 * S, gr.y - 0.016 * S);
-  float pom = length(vec2(u + bl + 0.235 * S, v)) - 0.034 * S;
+  float u = q.x, bl = S;
+  float t = -u / bl;
+  float c = scimC(u, bl, S);
+  float dc = (t > 0.0 && t < 1.0) ? 0.34 * S * t / bl : (t >= 1.0 ? 0.34 * S / bl : 0.0);
+  float kk = inversesqrt(1.0 + dc * dc);
+  float vv = q.y - c;
+  // lame : tranchant côté convexe (-v), dos avec yelman et faux tranchant vers la pointe
+  float tip = smoothstep(0.0, 0.11, t);
+  float we = S * (0.02 + 0.012 * t) * tip;
+  float ws = t < 0.3 ? 0.046 * S * smoothstep(0.0, 0.3, t) : (t < 0.36 ? 0.046 * S : mix(0.046 * S, 0.019 * S, smoothstep(0.36, 0.4, t)));
+  float blade = (vv < 0.0 ? -vv - we : vv - ws) * kk;
+  blade = max(blade, max(u, -u - bl));
+  // encoche de l'épaulement du yelman
+  blade = max(blade, -(length(vec2((t - 0.36) * bl, vv - 0.046 * S)) - 0.008 * S));
+  // garde à boules
+  float gu = u + bl;
+  float guard = max(abs(gu) - 0.011 * S, abs(vv) - 0.085 * S);
+  guard = min(guard, length(vec2(gu, abs(vv) - 0.095 * S)) - 0.016 * S);
+  // poignée en crosse et pommeau recourbé (vers le tranchant)
+  float gt = clamp((-gu - 0.012 * S) / (0.19 * S), 0.0, 1.0);
+  float gv = vv + 0.05 * S * gt * gt;
+  float grip = max(abs(-gu - 0.105 * S) - 0.094 * S, abs(gv) - 0.017 * S);
+  float pom = length(vec2(-gu - 0.215 * S, vv + 0.068 * S)) - 0.03 * S;
+  pom = min(pom, length(vec2(-gu - 0.235 * S, vv + 0.1 * S)) - 0.018 * S);
   return min(min(blade, guard), min(grip, pom));
 }
 void main(){
