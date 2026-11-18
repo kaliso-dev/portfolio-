@@ -64,6 +64,6 @@ python3 shoot.py plans/plan_full2.json   # captures dans test/shots/
 
 ## Crédits
 
-- Musique : « Whirling Dervish », Omar Faruk Tekbilek. Enregistrement commercial : une licence est nécessaire pour le diffuser sur un site public. Pour changer de morceau, remplace le fichier dans `src/assets/audio/` et mets à jour `SITE.music`.
+- Musique : « What The Sand Saw », Alex Melodic, Music in the background from https://www.FesliyanStudios.com. Licence gratuite avec crédit, affiché dans le menu ; un don sur leur site donne une licence commerciale sans crédit obligatoire. Pour changer de morceau, remplace le fichier dans `src/assets/audio/` et mets à jour `SITE.music` (`end` et `xfade` règlent la boucle en fondu enchaîné).
 - Son d'épée : généré avec ElevenLabs.
 - Chevalier, épée, couvertures et motifs : dessinés en code pour ce site.

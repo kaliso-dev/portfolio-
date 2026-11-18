@@ -16,7 +16,12 @@ const SITE = {
   // Pour les recevoir automatiquement, mets l'URL d'un service de formulaire (ex. Formspree).
   ticket: { endpoint: '' },
   // musique d'ambiance (fichier dans src/assets/audio) — gate : invite « dégainer » en fin de chargement
-  music: { src: 'assets/audio/whirling-dervish.mp3', title: 'Whirling Dervish', artist: 'Omar Faruk Tekbilek', volume: 0.18, start: 2.4, gate: true },
+  // « What The Sand Saw » — Alex Melodic, FesliyanStudios.com (crédit obligatoire sans licence commerciale)
+  music: {
+    src: 'assets/audio/what-the-sand-saw.mp3', title: 'What The Sand Saw', artist: 'Alex Melodic',
+    credit: 'FesliyanStudios.com', creditUrl: 'https://www.fesliyanstudios.com',
+    volume: 0.16, start: 0, end: 192, xfade: 3.5, gate: true,
+  },
   location: 'Paris — Remote',
   heroWord: 'KALISO',
   os: 'KNIGHT.OS',

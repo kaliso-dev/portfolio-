@@ -313,6 +313,9 @@ async function boot() {
   Sound.init();
   Music.init();
   $$('[data-site-name]').forEach((n) => { n.textContent = SITE.name; });
+  // crédit de la musique (exigé par la licence gratuite de Fesliyan Studios)
+  const mc = $('.menu-credit'), M = SITE.music;
+  if (mc && M && M.src) mc.innerHTML = `♪ ${esc(M.title)} — ${esc(M.artist)}<br>musique de fond : <a href="${esc(M.creditUrl || '#')}" target="_blank" rel="noopener noreferrer">${esc(M.credit || '')}</a>`;
   document.title = `${SITE.name} — ${SITE.role}`;
   await fontsReady();
   try { await Promise.race([Promise.all([document.fonts.load('500 40px "Geist Mono"'), document.fonts.load('400 80px "Jacquard 24"')]), wait(2000)]); } catch (e) {}
