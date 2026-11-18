@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>KALISO — forge privée</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Geist:wght@400;500;800&family=Jacquard+24&family=Noto+Kufi+Arabic:wght@400;500&display=swap">
+<style>
+:root{--bg:#0b0d0b;--bg2:#121512;--bg3:#181c18;--line:#262b26;--fg:#e8ebe6;--dim:#8b938a;--acc:#127d5f;--acc-t:#4cb58f;--warn:#e0a24a;--err:#e5664f;--r:6px}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 "Geist",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+.mono,code,pre{font-family:"Geist Mono",ui-monospace,monospace}
+a{color:var(--acc-t)}
+[hidden]{display:none!important}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+/* connexion */
+.login{min-height:100vh;display:grid;place-items:center;padding:24px}
+.login form{width:min(420px,100%);background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:28px}
+.login h1{font:400 64px/0.9 "Jacquard 24",serif;margin:0 0 4px;letter-spacing:.02em}
+.login p{color:var(--dim);margin:0 0 20px;font-size:13px}
+label{display:block;font-size:12px;color:var(--dim);margin:0 0 6px;font-family:"Geist Mono",monospace;text-transform:lowercase}
+input[type=text],input[type=password],input[type=search],select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+textarea{min-height:76px;resize:vertical}
+.check{display:flex;gap:8px;align-items:center;margin:12px 0 18px;color:var(--dim);font-size:13px}
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--bg3);border-radius:var(--r);padding:8px 14px;cursor:pointer;font-family:"Geist Mono",monospace;font-size:12.5px;text-decoration:none;color:var(--fg)}
+.btn:hover{border-color:var(--dim)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.pri:hover{filter:brightness(1.12)}
+.btn.danger{color:var(--err)}
+.btn.danger:hover{border-color:var(--err)}
+.err{color:var(--err);font-size:13px;min-height:20px;margin-top:10px}
+/* barre */
+header{position:sticky;top:0;z-index:5;background:rgba(11,13,11,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;gap:16px;height:60px}
+.brand{font:400 30px/1 "Jacquard 24",serif;letter-spacing:.03em}
+.brand small{font:12px "Geist Mono",monospace;color:var(--dim);margin-left:10px;letter-spacing:0}
+.grow{flex:1}
+.pill{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;border:1px solid var(--line);border-radius:99px;padding:6px 12px;font:12.5px "Geist Mono",monospace;cursor:pointer;background:var(--bg2)}
+.pill .ember{width:9px;height:9px;border-radius:50%;background:var(--dim)}
+.pill.lit{border-color:rgba(18,125,95,.6)}
+.pill.lit .ember{background:#3ad29a;box-shadow:0 0 10px #3ad29a,0 0 22px rgba(58,210,154,.5);animation:ember 1.6s ease-in-out infinite}
+@keyframes ember{50%{opacity:.55;transform:scale(.8)}}
+/* tableau de bord */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:22px 0}
+.stat{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;cursor:pointer}
+.stat:hover{border-color:var(--dim)}
+.stat b{display:block;font:500 26px/1.1 "Geist",sans-serif}
+.stat span{font:12px "Geist Mono",monospace;color:var(--dim)}
+.stat.hot b{color:var(--acc-t)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;cursor:pointer;color:var(--dim);font:13px "Geist Mono",monospace}
+.tabs button[aria-selected=true]{color:var(--fg);border-color:var(--acc)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.tools input[type=search]{max-width:280px}
+.chip{border:1px solid var(--line);background:var(--bg2);border-radius:99px;padding:5px 11px;font:12px "Geist Mono",monospace;cursor:pointer;color:var(--dim)}
+.chip[aria-pressed=true]{color:var(--fg);border-color:var(--acc);background:rgba(18,125,95,.15)}
+.list{display:flex;flex-direction:column;gap:8px;margin-bottom:60px}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:8px}
+.card.new{border-left:3px solid var(--acc)}
+.row{display:grid;grid-template-columns:150px 1fr auto;gap:14px;align-items:center;padding:12px 14px;cursor:pointer}
+.row .id{font:12.5px "Geist Mono",monospace;color:var(--dim)}
+.row .who{min-width:0}
+.row .who b{font-weight:500}
+.row .who div{color:var(--dim);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{font:11.5px "Geist Mono",monospace;padding:3px 9px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
+.b-nouveau{color:#3ad29a;border-color:rgba(58,210,154,.5)}
+.b-discussion{color:#7bb6ff;border-color:rgba(123,182,255,.45)}
+.b-devis{color:var(--warn);border-color:rgba(224,162,74,.5)}
+.b-forge{color:#c99bff;border-color:rgba(201,155,255,.45)}
+.b-livre{color:var(--fg)}
+.b-archive{color:var(--dim)}
+.prio-haute{color:var(--err)}
+.detail{border-top:1px solid var(--line);padding:16px 14px;display:grid;grid-template-columns:1.4fr 1fr;gap:22px}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:4px 10px;font-size:13px;margin-bottom:14px}
+.kv dt{color:var(--dim);font-family:"Geist Mono",monospace;font-size:12px}
+.kv dd{margin:0;word-break:break-word}
+.msg{white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:12px;font-size:13.5px;margin:0 0 14px}
+.msg[dir=rtl]{font-family:"Noto Kufi Arabic",sans-serif}
+.plan{background:var(--bg);border:1px dashed rgba(18,125,95,.6);border-radius:var(--r);padding:12px 14px;font-size:13px}
+.plan h4{margin:0 0 6px;font:500 13px "Geist Mono",monospace;color:var(--acc-t)}
+.plan ul{margin:4px 0 10px;padding-left:18px}
+.plan p{margin:0 0 8px}
+.side > *{margin-bottom:12px}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.muted{color:var(--dim);font-size:12.5px}
+.empty{color:var(--dim);text-align:center;padding:50px 0;font-family:"Geist Mono",monospace;font-size:13px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.panel{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:16px;max-width:860px}
+.panel h3{margin:0 0 6px;font-weight:500}
+.switch{display:flex;align-items:center;gap:12px;margin:14px 0 18px;cursor:pointer;user-select:none}
+.switch input{appearance:none;width:46px;height:26px;border-radius:99px;background:var(--line);position:relative;cursor:pointer;margin:0;transition:background .2s}
+.switch input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--fg);transition:transform .2s}
+.switch input:checked{background:var(--acc)}
+.switch input:checked::after{transform:translateX(20px)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--acc);border-radius:var(--r);padding:10px 16px;font:13px "Geist Mono",monospace;z-index:20}
+.toast.bad{border-color:var(--err)}
+.meter{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px}
+.meter i{display:block;height:100%;background:var(--acc)}
+@media (max-width:760px){.row{grid-template-columns:1fr auto}.row .id{grid-column:1/-1}.detail{grid-template-columns:1fr}.fgrid{grid-template-columns:1fr}header .brand small{display:none}}
+</style>
+</head>
+<body>
+<div class="login" id="login">
+  <form id="login-form" autocomplete="on">
+    <h1>KALISO</h1>
+    <p>forge privée — tickets, demandes à KALISO et état de la forge.</p>
+    <input type="text" name="username" value="sofiene" autocomplete="username" hidden>
+    <label for="tok">mot de passe (ADMIN_TOKEN)</label>
+    <input id="tok" type="password" autocomplete="current-password" required>
+    <div class="check"><input id="keep" type="checkbox"><label for="keep" style="margin:0">rester connecté sur cet appareil</label></div>
+    <button class="btn pri" type="submit">⚔ entrer dans la forge</button>
+    <div class="err" id="login-err" role="alert"></div>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <header><div class="wrap">
+    <div class="brand">KALISO<small>forge privée</small></div>
+    <div class="grow"></div>
+    <button class="pill" id="forge-pill" type="button" title="Basculer l'état de la forge"><span class="ember"></span><span id="forge-txt">…</span></button>
+    <button class="btn" id="logout" type="button">quitter</button>
+  </div></header>
+  <main class="wrap">
+    <div class="stats" id="stats"></div>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="tickets">tickets</button>
+      <button role="tab" aria-selected="false" data-tab="forges">demandes à KALISO</button>
+      <button role="tab" aria-selected="false" data-tab="reglages">forge &amp; réglages</button>
+    </div>
+    <section id="tab-tickets">
+      <div class="tools" id="filters"></div>
+      <div class="list" id="tickets"></div>
+    </section>
+    <section id="tab-forges" hidden><div class="list" id="forges"></div></section>
+    <section id="tab-reglages" hidden></section>
+  </main>
+</div>
+
+<script nonce="__NONCE__">
+(() => {
+  'use strict';
+  const $ = (s, r = document) => r.querySelector(s);
+  // construction du DOM sans innerHTML : rien de ce qu'écrit un visiteur n'est interprété
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v == null || v === false) continue;
+      if (k === 'class') n.className = v;
+      else if (k === 'text') n.textContent = v;
+      else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v === true ? '' : v);
+    }
+    for (const c of kids.flat()) if (c != null && c !== false) n.append(c.nodeType ? c : document.createTextNode(String(c)));
+    return n;
+  };
+  const S = { token: sessionStorage.getItem('kal-admin') || localStorage.getItem('kal-admin') || '', labels: null, overview: null, tickets: [], forges: [], filter: 'actifs', q: '', open: new Set(), tab: 'tickets', seen: Number(localStorage.getItem('kal-seen') || 0) };
+  const LANG_NAMES = { fr: 'français', en: 'anglais', ar: 'arabe' };
+  const fmt = (d) => { try { return new Date(d).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return d; } };
+  const money = (e) => e && e.prix ? `${e.prix[0].toLocaleString('fr-FR')} – ${e.prix[1].toLocaleString('fr-FR')} ${e.devise === 'EUR' ? '€' : e.devise} · ${e.semaines[0]}–${e.semaines[1]} sem.` : '—';
+
+  function toast(msg, bad) {
+    const t = el('div', { class: 'toast' + (bad ? ' bad' : ''), role: 'status', text: msg });
+    document.body.append(t);
+    setTimeout(() => t.remove(), 2600);
+  }
+
+  async function api(path, opts = {}) {
+    const r = await fetch('/api/admin' + path, { ...opts, headers: { authorization: 'Bearer ' + S.token, ...(opts.body ? { 'content-type': 'application/json' } : {}), ...(opts.headers || {}) } });
+    const ct = r.headers.get('content-type') || '';
+    const data = ct.includes('json') ? await r.json() : await r.blob();
+    if (r.status === 401) {
+      const msg = data && data.error && data.error !== 'jeton invalide' ? data.error : ($('#app').hidden ? 'mot de passe incorrect' : 'session expirée, reconnecte-toi');
+      logout(); throw new Error(msg);
+    }
+    if (!r.ok) throw new Error((data && data.error) || ('erreur ' + r.status));
+    return data;
+  }
+
+  /* --- connexion --------------------------------------------------------- */
+  $('#login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    S.token = $('#tok').value.trim();
+    $('#login-err').textContent = '';
+    try {
+      await refresh();
+      (($('#keep').checked) ? localStorage : sessionStorage).setItem('kal-admin', S.token);
+      show();
+    } catch (err) { $('#login-err').textContent = err.message; S.token = ''; }
+  });
+  function logout() { sessionStorage.removeItem('kal-admin'); localStorage.removeItem('kal-admin'); S.token = ''; $('#app').hidden = true; $('#login').hidden = false; }
+  $('#logout').addEventListener('click', logout);
+  function show() { $('#login').hidden = true; $('#app').hidden = false; }
+
+  /* --- données ------------------------------------------------------------ */
+  async function refresh() {
+    const [ov, tk] = await Promise.all([api('/overview'), api('/tickets?status=tous')]);
+    S.overview = ov; S.labels = ov.labels; S.tickets = tk.tickets;
+    render();
+  }
+  async function loadForges() { S.forges = (await api('/forges')).forges; renderForges(); }
+
+  /* --- rendu ---------------------------------------------------------------- */
+  function render() { renderPill(); renderStats(); renderFilters(); renderTickets(); if (S.tab === 'reglages') renderSettings(); const n = S.tickets.filter((t) => t.status === 'nouveau').length; document.title = (n ? `(${n}) ` : '') + 'KALISO — forge privée'; }
+
+  function renderPill() {
+    const s = S.overview.status;
+    $('#forge-pill').classList.toggle('lit', !!s.lit);
+    $('#forge-txt').textContent = s.lit ? 'forge allumée' : 'forge éteinte';
+  }
+  $('#forge-pill').addEventListener('click', async () => {
+    const s = S.overview.status;
+    try { const r = await api('/status', { method: 'PUT', body: JSON.stringify({ lit: !s.lit, note: s.note }) }); S.overview.status = r.status; renderPill(); if (S.tab === 'reglages') renderSettings(); toast(r.status.lit ? 'forge allumée : tu es disponible' : 'forge éteinte : indisponible'); }
+    catch (e) { toast(e.message, true); }
+  });
+
+  function renderStats() {
+    const b = S.overview.tickets.byStatus, f = S.overview.forge, L = S.labels.STATUTS;
+    const box = $('#stats'); box.replaceChildren();
+    const card = (n, label, filter, hot) => el('div', { class: 'stat' + (hot ? ' hot' : ''), role: 'button', tabindex: 0, onclick: () => { if (filter) { setTab('tickets'); S.filter = filter; renderFilters(); renderTickets(); } else setTab('forges'); } }, el('b', { text: n }), el('span', { text: label }));
+    box.append(
+      card(b.nouveau || 0, L.nouveau.toLowerCase(), 'nouveau', b.nouveau > 0),
+      card(b.discussion || 0, L.discussion.toLowerCase(), 'discussion'),
+      card(b.devis || 0, L.devis.toLowerCase(), 'devis'),
+      card(b.forge || 0, L.forge.toLowerCase(), 'forge'),
+      card(b.livre || 0, L.livre.toLowerCase(), 'livre'),
+      el('div', { class: 'stat', role: 'button', tabindex: 0, onclick: () => setTab('forges') }, el('b', { text: `${f.used}/${f.cap}` }), el('span', { text: 'KALISO aujourd’hui' }), el('div', { class: 'meter' }, el('i', { style: `width:${Math.min(100, (f.used / f.cap) * 100)}%` }))),
+    );
+  }
+
+  function renderFilters() {
+    const L = S.labels.STATUTS;
+    const box = $('#filters'); box.replaceChildren();
+    const chips = [['actifs', 'actifs'], ...Object.entries(L).map(([k, v]) => [k, v.toLowerCase()]), ['tous', 'tous']];
+    chips.forEach(([k, label]) => {
+      const n = k === 'tous' ? S.tickets.length : k === 'actifs' ? S.tickets.filter((t) => t.status !== 'archive').length : S.tickets.filter((t) => t.status === k).length;
+      box.append(el('button', { class: 'chip', type: 'button', 'aria-pressed': String(S.filter === k), onclick: () => { S.filter = k; renderFilters(); renderTickets(); } }, `${label} · ${n}`));
+    });
+    const q = el('input', { type: 'search', placeholder: 'chercher (nom, email, mot…)', value: S.q, 'aria-label': 'Chercher un ticket' });
+    q.addEventListener('input', () => { S.q = q.value.toLowerCase(); renderTickets(); });
+    box.append(el('div', { class: 'grow' }), q, el('button', { class: 'btn', type: 'button', onclick: exportCsv }, '⇩ export CSV'), el('button', { class: 'btn', type: 'button', onclick: () => refresh().then(() => toast('à jour')).catch((e) => toast(e.message, true)) }, '↻'));
+  }
+
+  async function exportCsv() {
+    try {
+      const blob = await api('/export');
+      const a = el('a', { href: URL.createObjectURL(blob), download: `tickets-kaliso-${new Date().toISOString().slice(0, 10)}.csv` });
+      document.body.append(a); a.click(); a.remove();
+    } catch (e) { toast(e.message, true); }
+  }
+
+  function planBlock(plan, est, model) {
+    if (!plan || plan.error) return el('div', { class: 'plan' }, el('h4', { text: '// KALISO' }), el('p', { class: 'muted', text: plan && plan.error ? 'échec : ' + plan.error : 'aucun plan' }));
+    if (plan.offtopic) return el('div', { class: 'plan' }, el('h4', { text: '// KALISO — hors sujet' }), el('p', { text: plan.summary }));
+    const ul = (arr) => el('ul', {}, (arr || []).map((x) => el('li', { text: x })));
+    return el('div', { class: 'plan' },
+      el('h4', { text: `// plan de KALISO — ${plan.title || ''}` }),
+      el('p', { text: plan.summary }),
+      el('div', { class: 'muted', text: `type : ${S.labels.TYPES[plan.type] || plan.type} · complexité ${plan.complexity}/5${plan.modules && plan.modules.length ? ' · modules : ' + plan.modules.join(', ') : ''}` }),
+      el('div', { class: 'muted', text: 'fourchette affichée : ' + money(est) + (model ? ' · ' + model : '') }),
+      el('h4', { text: 'fonctionnalités', style: 'margin-top:10px' }), ul(plan.features),
+      el('h4', { text: 'stack' }), el('p', { text: (plan.stack || []).join(' · ') }),
+      el('h4', { text: 'étapes' }), ul((plan.steps || []).map((s) => s.name + (s.detail ? ' — ' + s.detail : ''))),
+      plan.questions && plan.questions.length ? [el('h4', { text: 'questions à poser' }), ul(plan.questions)] : null,
+    );
+  }
+
+  function renderTickets() {
+    const L = S.labels;
+    let list = S.tickets;
+    if (S.filter === 'actifs') list = list.filter((t) => t.status !== 'archive');
+    else if (S.filter !== 'tous') list = list.filter((t) => t.status === S.filter);
+    if (S.q) list = list.filter((t) => [t.id, t.name, t.email, t.message, t.note].join(' ').toLowerCase().includes(S.q));
+    const box = $('#tickets'); box.replaceChildren();
+    if (!list.length) { box.append(el('div', { class: 'empty', text: S.tickets.length ? 'aucun ticket ici.' : 'aucun ticket pour l’instant. la forge attend sa première quête.' })); return; }
+    list.forEach((t) => {
+      const open = S.open.has(t.id);
+      const card = el('article', { class: 'card' + (t.status === 'nouveau' ? ' new' : '') });
+      const head = el('div', { class: 'row', role: 'button', tabindex: 0, 'aria-expanded': String(open) },
+        el('div', { class: 'id' }, t.id, el('br'), fmt(t.created_at)),
+        el('div', { class: 'who' }, el('b', { text: t.name }), ' ', el('span', { class: 'muted', text: '· ' + (L.TYPES[t.type] || t.type) + (t.source === 'forge' ? ' · via KALISO' : '') }), el('div', { text: t.message })),
+        el('div', {}, t.priority === 'haute' ? el('span', { class: 'badge prio-haute', text: 'urgent', style: 'margin-right:6px' }) : null, el('span', { class: 'badge b-' + t.status, text: (L.STATUTS[t.status] || t.status).toLowerCase() })),
+      );
+      const toggle = () => { if (S.open.has(t.id)) S.open.delete(t.id); else S.open.add(t.id); renderTickets(); };
+      head.addEventListener('click', toggle);
+      head.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+      card.append(head);
+      if (open) card.append(detail(t));
+      box.append(card);
+    });
+  }
+
+  function detail(t) {
+    const L = S.labels;
+    const status = el('select', { 'aria-label': 'Statut' }, Object.entries(L.STATUTS).map(([k, v]) => el('option', { value: k, selected: k === t.status }, v)));
+    const note = el('textarea', { placeholder: 'note privée (toi seul la vois)' }); note.value = t.note || '';
+    const reply = el('textarea', { placeholder: 'message visible par le client avec la commande « status » du terminal' }); reply.value = t.reply || '';
+    const subject = `Re: [${t.id}] ${L.TYPES[t.type] || ''}`;
+    const save = async () => {
+      try { await api('/tickets/' + t.id, { method: 'PATCH', body: JSON.stringify({ status: status.value, note: note.value, reply: reply.value }) }); Object.assign(t, { status: status.value, note: note.value, reply: reply.value }); toast('ticket enregistré'); await refresh(); }
+      catch (e) { toast(e.message, true); }
+    };
+    const del = async () => {
+      if (!confirm(`Supprimer définitivement ${t.id} ? (préfère « Archivé » pour le garder)`)) return;
+      try { await api('/tickets/' + t.id, { method: 'DELETE' }); S.open.delete(t.id); toast('ticket supprimé'); await refresh(); } catch (e) { toast(e.message, true); }
+    };
+    return el('div', { class: 'detail' },
+      el('div', {},
+        el('dl', { class: 'kv' },
+          el('dt', { text: 'client' }), el('dd', { text: t.name }),
+          el('dt', { text: 'email' }), el('dd', {}, el('a', { href: `mailto:${t.email}?subject=${encodeURIComponent(subject)}`, text: t.email })),
+          el('dt', { text: 'type' }), el('dd', { text: L.TYPES[t.type] || t.type }),
+          el('dt', { text: 'budget' }), el('dd', { text: L.BUDGETS[t.budget] || t.budget || '—' }),
+          el('dt', { text: 'délai' }), el('dd', { text: (L.DELAIS[t.deadline] || t.deadline || '—') + (t.priority ? ` (priorité ${t.priority})` : '') }),
+          el('dt', { text: 'langue' }), el('dd', { text: LANG_NAMES[t.lang] || t.lang || 'français' }),
+          el('dt', { text: 'mis à jour' }), el('dd', { text: fmt(t.updated_at) }),
+        ),
+        el('pre', { class: 'msg', dir: t.lang === 'ar' ? 'rtl' : 'auto', text: t.message }),
+        t.forge_id ? planBlock(t.plan, t.estimate, t.forge_model) : null,
+      ),
+      el('div', { class: 'side' },
+        el('div', {}, el('label', { text: 'statut' }), status),
+        el('div', {}, el('label', { text: 'note privée' }), note),
+        el('div', {}, el('label', { text: 'réponse visible (terminal → status)' }), reply),
+        el('div', { class: 'actions' },
+          el('button', { class: 'btn pri', type: 'button', onclick: save }, 'enregistrer'),
+          el('a', { class: 'btn', href: `mailto:${t.email}?subject=${encodeURIComponent(subject)}` }, '✉ répondre'),
+          el('button', { class: 'btn danger', type: 'button', onclick: del }, 'supprimer'),
+        ),
+        t.lang && t.lang !== 'fr' ? el('p', { class: 'muted', text: `Écrit en ${LANG_NAMES[t.lang]} : réponds par écrit (un traducteur suffit), aucun appel n’est proposé sur le site.` }) : null,
+      ),
+    );
+  }
+
+  function renderForges() {
+    const box = $('#forges'); box.replaceChildren();
+    const f = S.overview.forge;
+    box.append(el('p', { class: 'muted', text: `Modèle : ${f.model} · ${f.used}/${f.cap} demandes aujourd’hui (remise à zéro à 01:00, heure de Paris en hiver) · ${f.total} au total · fourchettes ${f.prices ? 'affichées' : 'masquées'} (worker/src/tarifs.js)` }));
+    if (!S.forges.length) { box.append(el('div', { class: 'empty', text: 'personne n’a encore consulté KALISO.' })); return; }
+    S.forges.forEach((x) => {
+      const open = S.open.has(x.id);
+      const card = el('article', { class: 'card' });
+      const p = x.plan || {};
+      const head = el('div', { class: 'row', role: 'button', tabindex: 0 },
+        el('div', { class: 'id' }, x.id, el('br'), fmt(x.created_at)),
+        el('div', { class: 'who' }, el('b', { text: x.ok ? (p.offtopic ? 'hors sujet' : (p.title || '—')) : 'échec' }), ' ', el('span', { class: 'muted', text: `· ${LANG_NAMES[x.lang] || x.lang} · ${x.ms} ms` }), el('div', { text: x.text })),
+        el('div', {}, x.ticket_id ? el('span', { class: 'badge b-nouveau', text: '→ ' + x.ticket_id }) : el('span', { class: 'badge b-archive', text: x.estimate ? money(x.estimate).split(' · ')[0] : 'sans ticket' })),
+      );
+      head.addEventListener('click', () => { if (S.open.has(x.id)) S.open.delete(x.id); else S.open.add(x.id); renderForges(); });
+      card.append(head);
+      if (open) card.append(el('div', { class: 'detail' },
+        el('div', {}, el('pre', { class: 'msg', dir: x.lang === 'ar' ? 'rtl' : 'auto', text: x.text }), planBlock(x.plan, x.estimate, x.model)),
+        el('div', { class: 'side' }, el('div', { class: 'actions' }, el('button', { class: 'btn danger', type: 'button', onclick: async () => { if (!confirm('Supprimer cette demande ?')) return; try { await api('/forges/' + x.id, { method: 'DELETE' }); S.open.delete(x.id); await loadForges(); } catch (e) { toast(e.message, true); } } }, 'supprimer'))),
+      ));
+      box.append(card);
+    });
+  }
+
+  function renderSettings() {
+    const s = S.overview.status;
+    const box = $('#tab-reglages'); box.replaceChildren();
+    const lit = el('input', { type: 'checkbox', id: 'lit', checked: s.lit });
+    const notes = {};
+    const field = (k, label, ph) => { const i = el('input', { type: 'text', maxlength: 140, placeholder: ph, dir: k === 'ar' ? 'rtl' : 'ltr', value: (s.note && s.note[k]) || '' }); notes[k] = i; return el('div', {}, el('label', { text: label }), i); };
+    box.append(el('div', { class: 'panel' },
+      el('h3', { text: 'Forge allumée' }),
+      el('p', { class: 'muted', text: 'Allumée : la page d’accueil indique que tu prends de nouvelles quêtes. Éteinte : le visiteur voit que tu es complet (il peut toujours ouvrir un ticket). Le message court s’affiche à côté, dans la langue du visiteur ; laisse vide pour le texte par défaut.' }),
+      el('label', { class: 'switch', for: 'lit' }, lit, el('span', { text: 'forge allumée — disponible pour de nouvelles quêtes' })),
+      el('div', { class: 'fgrid' },
+        field('fr', 'message (français)', 'ex. dispo dès le 2 décembre'),
+        field('en', 'message (anglais)', 'ex. available from Dec 2'),
+        field('ar', 'message (arabe)', 'مثال: متاح من 2 ديسمبر'),
+      ),
+      el('div', { class: 'actions', style: 'margin-top:16px' }, el('button', { class: 'btn pri', type: 'button', onclick: async () => {
+        try { const r = await api('/status', { method: 'PUT', body: JSON.stringify({ lit: lit.checked, note: { fr: notes.fr.value, en: notes.en.value, ar: notes.ar.value } }) }); S.overview.status = r.status; renderPill(); toast('état de la forge enregistré'); }
+        catch (e) { toast(e.message, true); }
+      } }, 'enregistrer')),
+      el('p', { class: 'muted', text: 'Le site relit cet état toutes les minutes environ.' }),
+    ), el('div', { class: 'panel' },
+      el('h3', { text: 'Rappels' }),
+      el('p', { class: 'muted', text: 'Fourchettes de prix : worker/src/tarifs.js (puis redéploie). Notifications de nouveaux tickets : npx wrangler secret put NOTIFY_URL avec une adresse ntfy.sh ou un webhook Discord. Mot de passe : npx wrangler secret put ADMIN_TOKEN.' }),
+    ));
+  }
+
+  function setTab(k) {
+    S.tab = k;
+    document.querySelectorAll('[role=tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === k)));
+    ['tickets', 'forges', 'reglages'].forEach((x) => { $('#tab-' + x).hidden = x !== k; });
+    if (k === 'forges') loadForges().catch((e) => toast(e.message, true));
+    if (k === 'reglages') renderSettings();
+  }
+  document.querySelectorAll('[role=tab]').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
+
+  // rafraîchit toutes les minutes, sauf pendant qu'un ticket est ouvert (pour ne pas effacer une note en cours)
+  setInterval(() => { if (S.token && !document.hidden && !$('#app').hidden && !(S.tab === 'tickets' && S.open.size)) refresh().catch(() => {}); }, 60000);
+  if (S.token) refresh().then(show).catch(() => logout());
+})();
+</script>
+</body>
+</html>

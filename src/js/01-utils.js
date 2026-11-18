@@ -44,13 +44,17 @@ window.addEventListener('pointermove', (e) => {
 const RAMP = ' .:;+*xoX#&$'; // trié par encre réelle (Geist Mono 500)
 /* --- couleur d'accent (changeable : commande « theme » du terminal) ------ */
 const ACCENTS = {
-  zellige: { hex: '#127d5f', label: 'vert zellige' },
-  vert: { hex: '#4ade80', label: 'vert terminal' },
-  ambre: { hex: '#f2a24a', label: 'ambre de forge' },
-  laiton: { hex: '#d9b46a', label: 'laiton de Fès' },
-  majorelle: { hex: '#7b86ff', label: 'bleu Majorelle' },
-  marrakech: { hex: '#ec5b43', label: 'rouge Marrakech' },
+  zellige: { hex: '#127d5f', label: ['vert zellige', 'zellige green', 'أخضر الزليج'] },
+  vert: { hex: '#4ade80', label: ['vert terminal', 'terminal green', 'أخضر الطرفية'] },
+  ambre: { hex: '#f2a24a', label: ['ambre de forge', 'forge amber', 'كهرمان الكير'] },
+  laiton: { hex: '#d9b46a', label: ['laiton de Fès', 'Fez brass', 'نحاس فاس'] },
+  majorelle: { hex: '#7b86ff', label: ['bleu Majorelle', 'Majorelle blue', 'أزرق ماجوريل'] },
+  marrakech: { hex: '#ec5b43', label: ['rouge Marrakech', 'Marrakech red', 'أحمر مراكش'] },
+  // récompense des sept sceaux (07d-secrets.js)
+  or: { hex: '#e3b23c', label: ['or des sept sceaux', 'gold of the seven seals', 'ذهب الأختام السبعة'], secret: true },
 };
+const accentLabel = (k) => { const l = ACCENTS[k].label; return Array.isArray(l) ? (l[LI] || l[0]) : l; };
+const sealsDone = () => { try { return JSON.parse(localStorage.getItem('kaliso-seals') || '[]').length >= 7; } catch (e) { return false; } };
 const hexRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 // variante « texte » : même teinte, éclaircie juste assez pour 4,7:1 de contraste sur le fond
 function legibleRgb(rgb, bg = [11, 13, 11], target = 4.7) {
@@ -64,7 +68,7 @@ function legibleRgb(rgb, bg = [11, 13, 11], target = 4.7) {
 const ACCENT = { name: 'zellige', hex: ACCENTS.zellige.hex, rgb: hexRgb(ACCENTS.zellige.hex), text: ACCENTS.zellige.hex, bright: hexRgb(ACCENTS.zellige.hex), subs: new Set() };
 function setAccent(name, persist = false) {
   const a = ACCENTS[name];
-  if (!a) return false;
+  if (!a || (a.secret && !sealsDone())) return false;
   ACCENT.name = name; ACCENT.hex = a.hex; ACCENT.rgb = hexRgb(a.hex);
   const tx = legibleRgb(ACCENT.rgb);
   ACCENT.text = `rgb(${tx.join(',')})`;
@@ -79,7 +83,7 @@ function setAccent(name, persist = false) {
 }
 (() => {
   let n = (typeof SITE !== 'undefined' && SITE.accent) || 'zellige';
-  try { const saved = localStorage.getItem('kaliso-accent2'); if (saved && ACCENTS[saved]) n = saved; } catch (e) {}
+  try { const saved = localStorage.getItem('kaliso-accent2'); if (saved && ACCENTS[saved] && (!ACCENTS[saved].secret || sealsDone())) n = saved; } catch (e) {}
   try { const q = new URLSearchParams(location.search).get('accent'); if (q && ACCENTS[q]) n = q; } catch (e) {}
   setAccent(n);
 })();

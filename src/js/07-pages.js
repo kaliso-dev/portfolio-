@@ -11,14 +11,37 @@ function footerHTML(variant) {
     return `<footer class="footer-pinned footer-simple"><div class="container">
       <p data-copy="lines">${esc(f[0])}</p>
       <p class="footer-label" data-copy="lines">${esc(f[1])}</p>
-      <p data-copy="lines">${esc(f[2])}</p>
+      <p class="footer-lamp">${lampHTML()}</p>
     </div></footer>`;
   }
   return `<footer class="${variant === 'pinned' ? 'footer-pinned' : ''}"><div class="container">
-    <div class="footer-group" data-copy="items"${variant === 'credits' ? ' data-scroll' : ''}><p class="footer-label"><span>${esc(SITE.name)} © ${y}</span></p><p><span>Forgé à la main, avec Claude</span></p></div>
-    <div class="footer-group" data-copy="items"${variant === 'credits' ? ' data-scroll' : ''}><p class="footer-label"><span>Dire salam</span></p><p><a href="mailto:${esc(SITE.email)}" data-roll>${esc(SITE.email)}</a></p></div>
-    <div class="footer-group" data-copy="items"${variant === 'credits' ? ' data-scroll' : ''}><p class="footer-label"><span>Système</span></p><p><span>${esc(SITE.os)} ${esc(SITE.version)}</span></p></div>
+    <div class="footer-group" data-copy="items"${variant === 'credits' ? ' data-scroll' : ''}><p class="footer-label"><span>${esc(SITE.name)} © ${y}</span></p><p><span>${esc(t('foot.made'))}</span></p></div>
+    <div class="footer-group" data-copy="items"${variant === 'credits' ? ' data-scroll' : ''}><p class="footer-label"><span>${esc(t('foot.salam'))}</span></p><p><a href="mailto:${esc(SITE.email)}" data-roll>${esc(SITE.email)}</a></p></div>
+    <div class="footer-group" data-copy="items"${variant === 'credits' ? ' data-scroll' : ''}><p class="footer-label"><span>${esc(t('foot.system'))}</span></p><p><span>${esc(SITE.os)} ${esc(SITE.version)}</span></p></div>
   </div></footer>`;
+}
+
+/* --- forge allumée : témoin de disponibilité (réglé depuis le dashboard) ---- */
+function lampHTML() {
+  return `<a class="forge-lamp${FORGE.lit ? ' is-lit' : ''}" href="#terminal" data-lamp aria-live="polite">
+    <span class="fl-ember" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="fl-text"><span class="fl-label">${esc(FORGE.label())}</span><span class="fl-sub">${esc(FORGE.sub())}</span></span>
+  </a>`;
+}
+function bindLamp(root) {
+  const lamp = $('[data-lamp]', root);
+  if (!lamp) return () => {};
+  // un clic : direction le terminal, KALISO prêt à écouter (ou le ticket si la forge est éteinte)
+  lamp.addEventListener('click', () => { try { sessionStorage.setItem('kaliso-run', FORGE.lit ? 'forge' : 'ticket'); } catch (e) {} });
+  const upd = () => {
+    lamp.classList.toggle('is-lit', FORGE.lit);
+    $('.fl-label', lamp).textContent = FORGE.label();
+    $('.fl-sub', lamp).textContent = FORGE.sub();
+  };
+  FORGE.subs.add(upd);
+  upd();
+  FORGE.load();
+  return () => FORGE.subs.delete(upd);
 }
 
 function revealFooter(el, delay) {
@@ -44,7 +67,7 @@ function PageIndex() {
   const date = `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${String(d.getFullYear()).slice(2)}`;
   const el = h(`<section class="home">
     <h1 class="sr-only">${esc(SITE.name)}, ${esc(SITE.role)}</h1>
-    <div class="model" role="img" aria-label="Chevalier en ASCII animé"></div>
+    <div class="model" role="img" aria-label="${esc(t('home.knight'))}"></div>
     <div class="home-top" data-copy="items"><p><span>${date} — ${esc(SITE.os)} ${esc(SITE.version)} — status 200</span></p><p><span>${esc(SITE.motto)}</span></p></div>
     <div class="home-mid" aria-hidden="true">
       <div class="home-labels is-top" data-copy="items"><p><span>${esc(SITE.version)}</span></p><p><span>${esc(SITE.os)}</span></p></div>
@@ -59,6 +82,15 @@ function PageIndex() {
   const page = { key: 'index', el, scroll: false, timers: [] };
   page.ready = () => {
     prepCopy(el);
+    page.unlamp = bindLamp(el);
+    gsap.set($('.forge-lamp', el), { opacity: 0, y: 12 });
+    // secret : sept coups sur le chevalier
+    let hits = 0, last = 0;
+    $('.model', el).addEventListener('pointerdown', () => {
+      const n = performance.now();
+      hits = n - last < 900 ? hits + 1 : 1; last = n;
+      if (hits >= 7) { hits = 0; Seals.find('knight'); if (page.knight && !REDUCED) gsap.fromTo(page.knight, { extraRot: 0 }, { extraRot: Math.PI * 4, duration: 1.6, ease: 'power3.inOut', onComplete: () => { page.knight.extraRot = 0; } }); }
+    });
     page.chars = $$('.ch', el);
     page.dots = $$('.home-dot', el);
     gsap.set(page.chars, { yPercent: 110 });
@@ -78,8 +110,9 @@ function PageIndex() {
     $$('.home-lore [data-copy]', el).forEach((c, i) => revealCopy(c, delay + 1.4 + i * 0.15, { stagger: 0.05 }));
     gsap.to($$('.home-ornament span', el), { yPercent: 0, opacity: 1, duration: 1, ease: 'power4.out', stagger: 0.08, delay: delay + 1.6 });
     $$('footer [data-copy]', el).forEach((c, i) => revealCopy(c, delay + 1.5 + i * STAGGER));
+    gsap.to($('.forge-lamp', el), { opacity: 1, y: 0, duration: 1, ease: 'power4.out', delay: delay + 1.7 });
   };
-  page.destroy = () => { page.timers.forEach(clearTimeout); page.knight && page.knight.destroy(); };
+  page.destroy = () => { page.timers.forEach(clearTimeout); page.unlamp && page.unlamp(); page.knight && page.knight.destroy(); };
   return page;
 }
 
@@ -96,10 +129,10 @@ function swapText(p, text, instant) {
 function PageWork() {
   const P = SITE.projects;
   const el = h(`<div class="work">
-    <h1 class="sr-only">Projets</h1>
-    <nav class="sr-only" aria-label="Projets"><ul>${P.map((p) => `<li><a tabindex="-1" href="#projet-${p.slug}">${esc(p.name + p.ext)}</a></li>`).join('')}</ul></nav>
-    <div class="slider" tabindex="0" role="button" aria-label="Ouvrir le projet" aria-describedby="slide-title slide-count"></div>
-    <div class="slide-hint" data-copy="items"><p><span>[ glisser · molette · ← → · entrée ]</span></p></div>
+    <h1 class="sr-only">${esc(t('title.work'))}</h1>
+    <nav class="sr-only" aria-label="${esc(t('title.work'))}"><ul>${P.map((p) => `<li><a tabindex="-1" href="#projet-${p.slug}">${esc(p.name + p.ext)}</a></li>`).join('')}</ul></nav>
+    <div class="slider" tabindex="0" role="button" aria-label="${esc(t('work.open'))}" aria-describedby="slide-title slide-count"></div>
+    <div class="slide-hint" data-copy="items"><p><span>${esc(t('work.hint'))}</span></p></div>
     <div class="slide-info"><div class="container" data-copy="items">
       <p id="slide-title" aria-live="polite"><span class="swap"><span></span></span></p>
       <p><span>${esc(SITE.workLabel)}</span></p>
@@ -130,6 +163,29 @@ function PageWork() {
 }
 
 /* --- PROJET -------------------------------------------------------------- */
+// étude de cas (sections écrites dans src/projets/<slug>.md, HTML déjà nettoyé par build.py)
+function caseStudyHTML(p) {
+  const s = p.story;
+  const tm = p.temps;
+  if (!s && !tm) return '';
+  const lang = p.storyLang || 'fr';
+  const sec = (k) => (s && s[k] ? `<div class="case-sec" data-scroll-fade><h3 class="project-label text-small">${esc(t('case.' + k))}</h3><div class="case-body text-large" lang="${lang}" dir="${lang === 'ar' ? 'rtl' : 'auto'}">${s[k]}</div></div>` : '');
+  let time = '';
+  if (tm) {
+    const max = Math.max(tm.estime, tm.reel);
+    const d = Math.round(((tm.reel - tm.estime) / tm.estime) * 100);
+    const verdict = d === 0 ? t('case.onTime') : d < 0 ? t('case.faster', { n: -d }) : t('case.slower', { n: d });
+    const bar = (k, v) => `<div class="tb-row"><span class="tb-k">${esc(t('case.' + k))}</span><span class="tb-bar"><i class="tb-fill${k === 'actual' ? ' is-real' : ''}" style="--w:${((v / max) * 100).toFixed(1)}%"></i></span><span class="tb-v">${esc(unit(v, tm.unite))}</span></div>`;
+    time = `<div class="case-sec case-time" data-scroll-fade><h3 class="project-label text-small">${esc(t('case.time'))}</h3>
+      <div class="time-bars">${bar('estimated', tm.estime)}${bar('actual', tm.reel)}</div>
+      <p class="tb-verdict">${esc(verdict)}</p></div>`;
+  }
+  return `<section class="project-case"><div class="container">
+    <h2 class="project-label text-small" data-copy="lines" data-scroll>${esc(t('proj.case'))}</h2>
+    <div class="case-grid">${['quete', 'claude', 'decisions', 'resultats'].map(sec).join('')}${time}</div>
+  </div></section>`;
+}
+
 function PageProject(i) {
   const P = SITE.projects, p = P[i], next = P[(i + 1) % P.length];
   const cover = allCovers()[i];
@@ -138,31 +194,32 @@ function PageProject(i) {
   const frame = (src, alt = '') => `<div class="fluid-image project-frame"><img src="${src}" alt="${esc(alt)}" decoding="async"></div>`;
   const el = h(`<article class="project">
     <section class="project-hero">
-      <div class="fluid-image project-image hero"><img src="${cover}" alt="${esc(p.name)} — visuel principal" decoding="async"></div>
+      <div class="fluid-image project-image hero"><img src="${cover}" alt="${esc(p.name)} — ${esc(t('proj.cover'))}" decoding="async"></div>
       <div class="container project-title"><h1 data-copy="lines">${esc(p.name + p.ext)}</h1></div>
       <div class="container project-info"><p data-copy="lines">${esc(p.type)}</p><p data-copy="lines">${p.year}</p></div>
     </section>
     <section class="project-overview"><div class="container">
-      <div class="project-list"><h2 class="project-label text-small" data-copy="lines" data-scroll>// la quête</h2><ul data-copy="items" data-scroll>${li(p.services)}</ul></div>
-      <div class="project-list"><h2 class="project-label text-small" data-copy="lines" data-scroll>// l'arsenal</h2><ul data-copy="items" data-scroll>${li(p.stack)}</ul></div>
+      <div class="project-list"><h2 class="project-label text-small" data-copy="lines" data-scroll>${esc(t('proj.quest'))}</h2><ul data-copy="items" data-scroll>${li(p.services)}</ul></div>
+      <div class="project-list"><h2 class="project-label text-small" data-copy="lines" data-scroll>${esc(t('proj.arsenal'))}</h2><ul data-copy="items" data-scroll>${li(p.stack)}</ul></div>
       <div class="project-copy">
         ${p.description.map((t) => `<p class="text-large" data-copy="lines" data-scroll>${esc(t)}</p>`).join('')}
         <ul class="project-links" data-copy="items" data-scroll>
-          <li><a href="${esc(p.url || gh)}" target="_blank" rel="noopener noreferrer" data-roll>Voir le live ↗</a></li>
-          <li><a href="${esc(p.repo || gh)}" target="_blank" rel="noopener noreferrer" data-roll>Code source ↗</a></li>
+          <li><a href="${esc(p.url || gh)}" target="_blank" rel="noopener noreferrer" data-roll>${esc(t('proj.live'))}</a></li>
+          <li><a href="${esc(p.repo || gh)}" target="_blank" rel="noopener noreferrer" data-roll>${esc(t('proj.code'))}</a></li>
         </ul>
       </div>
     </div></section>
-    <div class="project-shots"><div class="container">${frame(shots[0], `${p.name} — code`)}</div></div>
+    <div class="project-shots"><div class="container">${frame(shots[0], `${p.name} — ${t('proj.shotCode')}`)}</div></div>
     <div class="project-stats"><div class="container">${p.stats.map(([v, l]) => `<div class="project-stat"><p class="text-large" data-copy="lines" data-scroll>${esc(v)}</p><p class="project-label" data-copy="lines" data-scroll>${esc(l)}</p></div>`).join('')}</div></div>
-    <div class="project-shots"><div class="container">${frame(shots[1])}${frame(shots[2], `${p.name} — journal de déploiement`)}</div></div>
+    <div class="project-shots"><div class="container">${frame(shots[1])}${frame(shots[2], `${p.name} — ${t('proj.shotLog')}`)}</div></div>
     <section class="project-notes"><div class="container">
-      <h2 class="project-label text-small" data-copy="lines" data-scroll>$ cat notes.md</h2>
+      <h2 class="project-label text-small" data-copy="lines" data-scroll>${esc(t('proj.notes'))}</h2>
       <div class="project-copy">${p.notes.map((t) => `<p class="text-large" data-copy="lines" data-scroll>${esc(t)}</p>`).join('')}</div>
     </div></section>
     <div class="project-shots"><div class="container">${frame(shots[3])}</div></div>
+    ${caseStudyHTML(p)}
     <section class="project-next">
-      <div class="container" data-copy="items" data-scroll><p class="project-label"><span>Quête suivante</span></p><h2><a href="#projet-${next.slug}" data-roll>${esc(next.name + next.ext)}</a></h2></div>
+      <div class="container" data-copy="items" data-scroll><p class="project-label"><span>${esc(t('proj.next'))}</span></p><h2><a href="#projet-${next.slug}" data-roll>${esc(next.name + next.ext)}</a></h2></div>
       ${footerHTML('credits')}
     </section>
   </article>`);
@@ -180,6 +237,13 @@ function PageProject(i) {
       gsap.to(img, { yPercent: 22, ease: 'none', scrollTrigger: { trigger: $('.project-hero', el), start: 'top top', end: 'bottom top', scrub: true } });
       fluidImages(el);
       scrollReveals(el);
+      $$('[data-scroll-fade]', el).forEach((c) => {
+        gsap.set(c, { opacity: 0, y: 28 });
+        ScrollTrigger.create({ trigger: c, start: 'top 88%', once: true, onEnter: () => {
+          gsap.to(c, { opacity: 1, y: 0, duration: 1.1, ease: 'power3.out' });
+          $$('.tb-fill', c).forEach((f, k) => gsap.fromTo(f, { width: 0 }, { width: getComputedStyle(f).getPropertyValue('--w'), duration: 1.4, ease: 'power3.out', delay: 0.25 + k * 0.2 }));
+        } });
+      });
     }, el);
   };
   page.destroy = () => page.ctx && page.ctx.revert();
@@ -233,9 +297,9 @@ function PageAbout() {
       </div>
       <h2 class="about-intro text-large" data-copy="lines">${esc(A.intro)}</h2>
     </div></section>
-    <div class="about-logo"><div class="container"><div class="logo-bust"><div class="knight-host" role="img" aria-label="Buste du chevalier en ASCII"></div></div></div></div>
+    <div class="about-logo"><div class="container"><div class="logo-bust"><div class="knight-host" role="img" aria-label="${esc(t('about.bust'))}"></div></div></div></div>
     <div class="about-portrait"><div class="container"><div class="portrait">
-      <div class="knight-host" role="img" aria-label="Chevalier en ASCII, vue de trois quarts"></div>
+      <div class="knight-host" role="img" aria-label="${esc(t('about.portrait'))}"></div>
       <div class="portrait-meta" data-copy="items" data-scroll><p><span>fig. 01 — ${esc(SITE.os)}</span></p><p><span>${esc(SITE.location)}</span></p></div>
       <div class="portrait-caption">
         <p class="gothic" data-copy="lines" data-scroll>${esc(A.portraitTitle)}</p>
@@ -243,14 +307,14 @@ function PageAbout() {
       </div>
     </div></div></div>
     <section class="about-info"><div class="container">
-      <div class="info-list"><h2 class="info-label text-small" data-copy="lines" data-scroll>$ ls ./savoir-faire</h2><ul data-copy="items" data-scroll>${li(A.skills)}</ul></div>
-      <div class="info-list"><h2 class="info-label text-small" data-copy="lines" data-scroll>$ ls ./arsenal</h2><ul data-copy="items" data-scroll>${li(A.stack)}</ul></div>
+      <div class="info-list"><h2 class="info-label text-small" data-copy="lines" data-scroll>${esc(t('about.skills'))}</h2><ul data-copy="items" data-scroll>${li(A.skills)}</ul></div>
+      <div class="info-list"><h2 class="info-label text-small" data-copy="lines" data-scroll>${esc(t('about.stack'))}</h2><ul data-copy="items" data-scroll>${li(A.stack)}</ul></div>
       <p class="about-copy text-large" data-copy="lines" data-scroll>${esc(A.copy)}</p>
     </div></section>
     <section class="about-credits"><div class="container">
-      <h2 class="credits-label text-small" data-copy="lines" data-scroll>$ cat campagnes.log</h2>
+      <h2 class="credits-label text-small" data-copy="lines" data-scroll>${esc(t('about.xp'))}</h2>
       <ul class="credits-list" data-copy="items" data-scroll>${A.experience.map(([y, t]) => `<li><span><span class="yr">${esc(y)}</span>${esc(t)}</span></li>`).join('')}</ul>
-      <h2 class="credits-label text-small" data-copy="lines" data-scroll>$ ls ./allies</h2>
+      <h2 class="credits-label text-small" data-copy="lines" data-scroll>${esc(t('about.allies'))}</h2>
       <ul class="credits-list" data-copy="items" data-scroll>${li(A.clients)}</ul>
       <div class="logo"><div class="knight-host"></div></div>
     </div></section>
@@ -311,15 +375,16 @@ function PageContact() {
   const C = SITE.contact;
   const el = h(`<div class="contact">
     <section class="inquire-hero"><div class="container">
-      <h1 class="sr-only">Contact</h1>
+      <h1 class="sr-only">${esc(t('title.contact'))}</h1>
       <p class="inquire-copy text-large" data-copy="lines">${esc(C.copy)}</p>
-      <p class="inquire-note" data-copy="lines">${esc(SITE.email)} — ${esc(SITE.availability)}</p>
+      <p class="inquire-note" data-copy="lines">${esc(SITE.email)} — ${esc([t('contact.reply'), t('contact.written')].filter(Boolean).join(' · '))}</p>
+      <a class="inquire-forge" href="#terminal" data-forge-cta><span class="fl-ember" aria-hidden="true"><i></i><i></i><i></i></span>${esc(t('contact.forge'))} <span aria-hidden="true">${RTL ? '←' : '→'}</span></a>
       <ul class="inquire-links" data-copy="items">
-        <li><a href="mailto:${esc(SITE.email)}" data-roll>Email</a></li>
-        ${SITE.socials.map((s) => `<li><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer" data-roll>${esc(s.label)}<span class="sr-only"> (nouvel onglet)</span></a></li>`).join('')}
-        <li><button type="button" class="copy-btn">Copier l'email</button></li>
+        <li><a href="mailto:${esc(SITE.email)}" data-roll>${esc(t('contact.email'))}</a></li>
+        ${SITE.socials.map((s) => `<li><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer" data-roll>${esc(s.label)}<span class="sr-only"> ${esc(t('contact.newTab'))}</span></a></li>`).join('')}
+        <li><button type="button" class="copy-btn">${esc(t('contact.copy'))}</button></li>
       </ul>
-      <div class="inquire-prompt" data-copy="items"><p><span><span class="usr">visiteur@${esc(SITE.handle)}</span>:~$ <span class="typed"></span><span class="cursor"></span></span></p></div>
+      <div class="inquire-prompt" data-copy="items" dir="ltr"><p><span><span class="usr">${esc(t('term.user'))}@${esc(SITE.handle)}</span>:~$ <span class="typed"></span><span class="cursor"></span></span></p></div>
     </div></section>
     ${footerHTML('pinned')}
   </div>`);
@@ -330,14 +395,18 @@ function PageContact() {
     const btn = $('.copy-btn', el);
     btn.addEventListener('click', async () => {
       Sound.play('select');
-      try { await navigator.clipboard.writeText(SITE.email); scrambleTo(btn, 'Copié ✓', 0.5); }
+      try { await navigator.clipboard.writeText(SITE.email); scrambleTo(btn, t('contact.copied'), 0.5); }
       catch (e) { scrambleTo(btn, SITE.email, 0.5); }
-      page.timers.push(setTimeout(() => scrambleTo(btn, 'Copier l\'email', 0.5), 2200));
+      page.timers.push(setTimeout(() => scrambleTo(btn, t('contact.copy'), 0.5), 2200));
     });
+    const cta = $('[data-forge-cta]', el);
+    cta.addEventListener('click', () => { try { sessionStorage.setItem('kaliso-run', 'forge'); } catch (e) {} });
+    gsap.set(cta, { opacity: 0, y: 12 });
   };
   page.intro = (delay = 0) => {
     revealCopy($('.inquire-copy', el), delay + 0.3);
     revealCopy($('.inquire-note', el), delay + 0.375);
+    gsap.to($('[data-forge-cta]', el), { opacity: 1, y: 0, duration: 1, ease: 'power4.out', delay: delay + 0.42 });
     revealCopy($('.inquire-links', el), delay + 0.45);
     revealCopy($('.inquire-prompt', el), delay + 0.6);
     revealFooter(el, delay + 0.75);
@@ -362,9 +431,9 @@ function PageNotFound() {
   const el = h(`<div class="nf">
     <section class="not-found"><div class="container">
       <pre class="not-found-ascii" aria-hidden="true">${esc(asciiArt('helm', 40, 20))}</pre>
-      <p class="not-found-note" data-copy="lines">Erreur 404 — piste perdue dans le désert</p>
-      <h1 class="not-found-copy" data-copy="lines">Cette page s'est perdue dans les sables, ou n'a jamais existé.</h1>
-      <ul class="not-found-links" data-copy="items"><li><a href="#index" data-roll>Retour au campement</a></li><li><a href="#projets" data-roll>Voir l'armurerie</a></li></ul>
+      <p class="not-found-note" data-copy="lines">${esc(t('nf.note'))}</p>
+      <h1 class="not-found-copy" data-copy="lines">${esc(t('nf.copy'))}</h1>
+      <ul class="not-found-links" data-copy="items"><li><a href="#index" data-roll>${esc(t('nf.home'))}</a></li><li><a href="#projets" data-roll>${esc(t('nf.work'))}</a></li></ul>
     </div></section>
     ${footerHTML('pinned')}
   </div>`);
@@ -376,7 +445,9 @@ function PageNotFound() {
     revealCopy($('.not-found-copy', el), delay + 0.375);
     revealCopy($('.not-found-links', el), delay + 0.45);
     revealFooter(el, delay + 0.6);
+    page.timers.push(setTimeout(() => Seals.find('desert'), (delay + 2.2) * 1000));
   };
-  page.destroy = () => {};
+  page.timers = [];
+  page.destroy = () => page.timers.forEach(clearTimeout);
   return page;
 }

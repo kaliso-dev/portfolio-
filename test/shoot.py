@@ -19,12 +19,39 @@ FONT_CSS = """
 @font-face{font-family:'Geist';font-weight:900;src:url(https://fonts.gstatic.com/l/geist-sans/geist-sans-latin-900-normal.woff2)}
 @font-face{font-family:'Instrument Serif';font-weight:400;src:url(https://fonts.gstatic.com/l/instrument-serif/instrument-serif-latin-400-normal.woff2)}
 @font-face{font-family:'Jacquard 24';font-weight:400;src:url(https://fonts.gstatic.com/l/jacquard-24/jacquard-24-latin-400-normal.woff2)}
+@font-face{font-family:'Noto Kufi Arabic';font-weight:300;src:url(https://fonts.gstatic.com/l/noto-kufi-arabic/noto-kufi-arabic-arabic-300-normal.woff2)}
+@font-face{font-family:'Noto Kufi Arabic';font-weight:400;src:url(https://fonts.gstatic.com/l/noto-kufi-arabic/noto-kufi-arabic-arabic-400-normal.woff2)}
+@font-face{font-family:'Noto Kufi Arabic';font-weight:500;src:url(https://fonts.gstatic.com/l/noto-kufi-arabic/noto-kufi-arabic-arabic-500-normal.woff2)}
+@font-face{font-family:'Noto Kufi Arabic';font-weight:700;src:url(https://fonts.gstatic.com/l/noto-kufi-arabic/noto-kufi-arabic-arabic-700-normal.woff2)}
 @font-face{font-family:'UnifrakturMaguntia';font-weight:400;src:url(https://fonts.gstatic.com/l/unifrakturmaguntia/unifrakturmaguntia-latin-400-normal.woff2)}
 """
 
 
+PLAN = {}
+
+
 async def route(r):
     url = r.request.url
+    if url.startswith("http://local/api/"):
+        path = url.split("http://local", 1)[1]
+        mocks = PLAN.get("mocks", {})
+        key = path.split("?")[0]
+        if key in mocks:
+            m = mocks[key]
+            if PLAN.get("mockDelay"):
+                await asyncio.sleep(PLAN["mockDelay"] / 1000)
+            return await r.fulfill(status=m.get("_status", 200), body=json.dumps({k: v for k, v in m.items() if k != "_status"}), headers={"content-type": "application/json"})
+        if PLAN.get("api") == "proxy":
+            import urllib.request
+            req = urllib.request.Request("http://127.0.0.1:8787" + path, data=r.request.post_data_buffer, method=r.request.method, headers={**{k: v for k, v in r.request.headers.items() if k.lower() in ("content-type", "authorization")}, "origin": "http://127.0.0.1:8787"})
+            opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+            try:
+                resp = opener.open(req, timeout=20)
+                body, status = resp.read(), resp.status
+            except urllib.error.HTTPError as e:
+                body, status = e.read(), e.code
+            return await r.fulfill(status=status, body=body, headers={"content-type": "application/json"})
+        return await r.fulfill(status=404, body="<html>nf</html>", headers={"content-type": "text/html"})
     if url.startswith("https://cdn.jsdelivr.net/npm/"):
         rest = url.split("/npm/", 1)[1]
         pkg_ver, path = rest.split("/", 1)
@@ -56,6 +83,7 @@ async def route(r):
 
 
 async def main(plan):
+    PLAN.update(plan)
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--autoplay-policy=" + ("no-user-gesture-required" if plan.get("autoplay", True) else "document-user-activation-required")])
         vw, vh = plan.get("viewport", [1440, 900])
@@ -66,7 +94,9 @@ async def main(plan):
         page.on("pageerror", lambda e: logs.append(f"[pageerror] {e}"))
         await page.route("**/*", route)
         await page.add_init_script("(()=>{const f=()=>{ if (window.gsap && gsap.ticker) { gsap.ticker.lagSmoothing(0); const o=gsap.ticker.lagSmoothing.bind(gsap.ticker); gsap.ticker.lagSmoothing=()=>o(0); } else setTimeout(f,5); }; f(); /*nolag*/})()")
-        await page.goto("http://local/" + plan.get("hash", ""))
+        if plan.get("storage"):
+            await page.add_init_script("(()=>{const s=" + json.dumps(plan["storage"]) + ";for(const k in s){try{localStorage.setItem(k,s[k])}catch(e){}}})()")
+        await page.goto("http://local/" + plan.get("query", "") + plan.get("hash", ""))
         for step in plan["steps"]:
             kind = step[0]
             if kind == "wait":
@@ -86,6 +116,10 @@ async def main(plan):
                 await page.keyboard.type(step[1], delay=8)
             elif kind == "key":
                 await page.keyboard.press(step[1])
+            elif kind == "fullshot":
+                await page.screenshot(path=str(OUT / step[1]), full_page=True)
+            elif kind == "scrollto":
+                await page.evaluate(f"(()=>{{const e=document.querySelector({json.dumps(step[1])}); if(e) {{ if (window.__app && __app.lenis) __app.lenis.scrollTo(e, {{immediate:true, offset:-80}}); else e.scrollIntoView(); }} }})()")
             elif kind == "drag":
                 _, x0, y0, x1, y1 = step
                 await page.mouse.move(x0, y0); await page.mouse.down()

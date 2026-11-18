@@ -1,5 +1,5 @@
 /* ==========================================================================
-   TERMINAL — page interactive : commandes, navigation, et génération de ticket
+   TERMINAL — commandes, KALISO (forge), tickets, suivi, duel, secrets
    ========================================================================== */
 const TERM_BANNER = [
   ' _  __    _    _     ___ ____   ___  ',
@@ -8,18 +8,25 @@ const TERM_BANNER = [
   '| . \\  / ___ \\| |___ | | ___) | |_| |',
   '|_|\\_\\/_/   \\_\\_____|___|____/ \\___/ ',
 ];
-const TICKET_STEPS = [
-  { k: 'nom', q: 'Ton nom, ou celui de ta structure', v: (s) => s.length >= 2 || 'au moins 2 caractères' },
-  { k: 'email', q: 'Ton email (pour te répondre)', v: (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s) || 'email invalide' },
-  { k: 'type', q: 'Quel type de quête ?', opts: ['Site vitrine', 'Site e-commerce', 'Application web / SaaS', 'Application mobile', 'API / back-end', 'Agent IA / automatisation', 'Outil interne / intégration', 'Autre : tout le reste'] },
-  { k: 'budget', q: 'Budget estimé', opts: ['< 2 k€', '2 – 5 k€', '5 – 10 k€', '10 k€ et +', 'À définir ensemble'] },
-  { k: 'delai', q: 'Délai souhaité', opts: ['Urgent (< 2 semaines)', 'Sous 1 mois', '2 – 3 mois', 'Flexible'] },
-  { k: 'message', q: 'Décris ta quête en quelques lignes', v: (s) => s.length >= 10 || 'un peu plus de détails (10 caractères minimum)' },
+const DUEL_ART = [
+  '     O                 O     ',
+  '    /|\\__/        \\__/|\\    ',
+  '    / \\               / \\    ',
 ];
-const TERM_PAGES = { index: 'index', '~': 'index', accueil: 'index', projets: 'projets', work: 'projets', 'a-propos': 'a-propos', about: 'a-propos', contact: 'contact' };
+const TK_TYPES = ['vitrine', 'ecommerce', 'webapp', 'mobile', 'api', 'ia', 'outil', 'autre'];
+const TK_BUDGETS = ['lt2k', '2-5k', '5-10k', '10k+', 'tbd'];
+const TK_DELAIS = ['urgent', '1m', '2-3m', 'flex'];
+const TERM_PAGES = { index: 'index', '~': 'index', accueil: 'index', home: 'index', projets: 'projets', work: 'projets', 'a-propos': 'a-propos', about: 'a-propos', contact: 'contact' };
+const YES = /^(o|oui|y|yes|نعم)$/i, NO = /^(n|non|no|لا)$/i, CANCEL = /^(annuler|cancel|quit|q|إلغاء)$/i;
+const ARABIC = /[\u0590-\u08FF\uFB50-\uFEFF]/;
+
+// libellé traduit si la clé existe, sinon la valeur brute (anciens tickets)
+const lab = (prefix, v) => (UI[prefix + v] ? t(prefix + v) : String(v || ''));
+const statusLabel = (s) => (s === 'draft' ? t('tk.draft') : s === 'open' ? t('tk.open') : lab('st.', s).toUpperCase());
 
 function loadTickets() { try { return JSON.parse(localStorage.getItem('kaliso-tickets') || '[]'); } catch (e) { return []; } }
 function saveTickets(list) { try { localStorage.setItem('kaliso-tickets', JSON.stringify(list.slice(-12))); } catch (e) {} }
+function storeTicket(tk) { const list = loadTickets().filter((x) => x.id !== tk.id); list.push(tk); saveTickets(list); }
 
 function wrapText(str, w) {
   const out = [];
@@ -35,42 +42,46 @@ function wrapText(str, w) {
   return out;
 }
 
-// ticket en ASCII (texte brut : sert aussi pour l'email et le .txt)
-function ticketText(t, w = 50) {
+// ticket en ASCII (texte brut : sert aussi pour l'email et le .txt). L'arabe n'est pas à chasse
+// fixe : dans ce cas le cadre reste ouvert à droite pour ne pas mentir sur l'alignement.
+function ticketText(tk, w = 50) {
   const inner = w - 4;
+  const open = ARABIC.test([tk.nom, tk.message, tk.email].join(' ')) || RTL;
   const pad = (s) => s + ' '.repeat(Math.max(0, inner - s.length));
-  const row = (s) => `| ${pad(s.slice(0, inner))} |`;
-  const kv = (k, v) => wrapText(v, inner - 11).map((l, i) => row((i ? ' '.repeat(11) : (k + ' '.repeat(11)).slice(0, 11)) + l));
-  const hr = '+' + '-'.repeat(w - 2) + '+';
-  const st = `[${t.status}]`;
-  const lines = [hr, row('TICKET ' + t.id + ' '.repeat(Math.max(1, inner - 7 - t.id.length - st.length)) + st), hr,
-    ...kv('client', t.nom), ...kv('email', t.email), ...kv('type', t.type), ...kv('budget', t.budget),
-    ...kv('délai', t.delai), ...kv('priorité', t.priorite), ...kv('créé le', t.date), hr,
-    ...wrapText(t.message, inner).map(row), hr];
+  const row = (s) => (open ? `| ${s}` : `| ${pad(s.slice(0, inner))} |`);
+  const kv = (k, v) => wrapText(v, inner - 11).map((l, i) => row((i ? ' '.repeat(11) : (t('tk.k.' + k) + ' '.repeat(11)).slice(0, 11)) + l));
+  const hr = '+' + '-'.repeat(w - 2) + (open ? '-' : '+');
+  const st = `[${statusLabel(tk.status)}]`;
+  const lines = [hr, row('TICKET ' + tk.id + ' '.repeat(Math.max(1, inner - 7 - tk.id.length - st.length)) + st), hr,
+    ...kv('client', tk.nom), ...kv('email', tk.email), ...kv('type', lab('type.', tk.type)), ...kv('budget', lab('budget.', tk.budget)),
+    ...kv('delai', lab('delai.', tk.delai)), ...kv('prio', lab('prio.', tk.priorite)), ...kv('date', tk.date), hr,
+    ...wrapText(tk.message, inner).map(row), hr];
   return lines.join('\n');
 }
 
 function PageTerminal() {
   const el = h(`<div class="term-page">
     <section class="term-wrap"><div class="container">
-      <h1 class="sr-only">Terminal</h1>
-      <div class="term">
-        <div class="term-bar"><span class="term-title"><span class="term-dot"></span>visiteur@${esc(SITE.handle)}: ~/terminal</span><span class="term-meta">${esc(SITE.os)} ${esc(SITE.version)} — zsh</span></div>
+      <h1 class="sr-only">${esc(t('title.terminal'))}</h1>
+      <div class="term" dir="ltr">
+        <div class="term-bar"><span class="term-title"><span class="term-dot"></span>${esc(t('term.user'))}@${esc(SITE.handle)}: ~/terminal</span><span class="term-meta">${esc(SITE.os)} ${esc(SITE.version)} — zsh</span></div>
         <div class="term-out" data-lenis-prevent aria-live="polite"></div>
         <form class="term-line" autocomplete="off">
           <label class="term-ps1" for="term-in"></label>
-          <input id="term-in" class="term-in" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" enterkeyhint="send" aria-label="Commande">
+          <input id="term-in" class="term-in" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" enterkeyhint="send" dir="auto" aria-label="${esc(t('term.cmd'))}">
         </form>
       </div>
-      <div class="term-chips">${['help', 'ticket', 'claude', 'ls', 'whoami', 'theme'].map((c) => `<button type="button" data-run="${c}">${c}</button>`).join('')}</div>
+      <div class="term-chips">${['help', 'forge', 'ticket', 'claude', 'ls', 'lang', 'duel'].map((c) => `<button type="button" data-run="${c}">${c}</button>`).join('')}</div>
     </div></section>
   </div>`);
   const out = $('.term-out', el), input = $('.term-in', el), ps1 = $('.term-ps1', el), form = $('.term-line', el);
   const page = { key: 'terminal', el, scroll: false, timers: [] };
   const hist = []; let hi = 0;
-  let wiz = null;      // assistant de ticket en cours
-  let last = null;     // dernier ticket généré
-  const PS1 = `visiteur@${SITE.handle}:~$`;
+  let mode = null;    // null | { kind: 'ticket' | 'forge' | 'duel', ... }
+  let last = null;    // dernier ticket
+  let draft = null;   // dernière description donnée à KALISO (et son plan)
+  let busy = false;
+  const PS1 = `${t('term.user')}@${SITE.handle}:~$`;
   const setPS = (s) => { ps1.textContent = s; };
 
   /* --- sortie ---------------------------------------------------------------- */
@@ -84,196 +95,386 @@ function PageTerminal() {
     return d;
   };
   const say = (txt, cls) => print(esc(txt), cls);
+  const para = (txt, cls) => wrapText(txt, cols()).forEach((l) => say(l, cls));
   const cmdLink = (c, label = c) => `<button type="button" class="tcmd" data-run="${esc(c)}">${esc(label)}</button>`;
-  const cols = () => clamp(Math.floor((out.clientWidth - 32) / (parseFloat(getComputedStyle(out).fontSize) * 0.6)), 34, 64);
+  const cols = () => clamp(Math.floor((out.clientWidth - 32) / (parseFloat(getComputedStyle(out).fontSize) * 0.6)), 34, 72);
+  const nf = (n) => Number(n).toLocaleString(LANG === 'ar' ? 'ar-MA' : LANG === 'en' ? 'en-US' : 'fr-FR');
+  const endMode = (msg) => { mode = null; setPS(PS1); if (msg) say(msg, 'dim'); };
 
   /* --- commandes -------------------------------------------------------------- */
   const CMDS = {
-    help: { d: 'cette aide', run() {
-      const rows = [['whoami', 'qui suis-je'], ['ls', 'lister les projets'], ['open <projet>', 'ouvrir un projet'], ['cat about.md', 'à propos, en bref'],
-        ['ticket', 'ouvrir une quête (devis, mission, question)'], ['claude', 'mon second sabre'], ['status [id]', 'suivre mes tickets'], ['contact', 'email et réseaux'],
-        ['theme [couleur]', 'changer la couleur d\'accent'], ['cd <page>', 'index · projets · a-propos · contact'], ['clear', 'effacer l\'écran']];
-      print(rows.map(([c, d]) => `  ${cmdLink(c.split(' ')[0] === 'cat' ? 'cat about.md' : c.split(' ')[0], c)}${' '.repeat(Math.max(2, 18 - c.length))}<span class="dim">${esc(d)}</span>`).join('\n'));
-      say('  ↑ ↓ historique · Tab complète · Ctrl+C annule', 'dim');
+    help: { run() {
+      const rows = [['whoami', 'h.whoami'], ['ls', 'h.ls'], ['open <projet>', 'h.open'], ['cat about.md', 'h.cat'], ['forge', 'h.forge'],
+        ['ticket', 'h.ticket'], ['status [id]', 'h.status'], ['claude', 'h.claude'], ['contact', 'h.contact'], ['lang [fr|en|ar]', 'h.lang'],
+        ['theme [couleur]', 'h.theme'], ['duel', 'h.duel'], ['cd <page>', 'h.cd'], ['clear', 'h.clear']];
+      print(rows.map(([c, d]) => `  ${cmdLink(c.startsWith('cat') ? 'cat about.md' : c.split(' ')[0], c)}${' '.repeat(Math.max(2, 18 - c.length))}<span class="dim">${esc(t(d))}</span>`).join('\n'));
+      say('  ' + t('term.keys'), 'dim');
     } },
-    whoami: { d: 'qui suis-je', run() {
-      print(`<span class="acc">${esc(SITE.name)}</span> — ${esc(SITE.role || 'développeur')} · ${esc(SITE.location || '')}`);
-      wrapText(SITE.about.door || SITE.motto || '', cols()).forEach((l) => say(l, 'dim'));
-      if (SITE.about.stack) say('stack : ' + SITE.about.stack.slice(0, 9).join(' · '), 'dim');
+    whoami: { run() {
+      print(`<span class="acc">${esc(SITE.name)}</span> — ${esc(SITE.role)} · ${esc(SITE.location || '')}`);
+      para(SITE.about.door || SITE.motto || '', 'dim');
+      if (SITE.about.stack) say(t('term.stack', { x: SITE.about.stack.slice(0, 9).join(' · ') }), 'dim');
     } },
-    ls: { d: 'lister les projets', run() {
-      say(`total ${SITE.projects.length}`, 'dim');
+    ls: { run() {
+      say(t('term.total', { n: SITE.projects.length }), 'dim');
       print(SITE.projects.map((p) => `${cmdLink('open ' + p.slug, (p.slug + (p.ext || '')).padEnd(15))} <span class="dim">${esc(String(p.year || ''))}  ${esc(p.type || '')}</span>`).join('\n'));
-      say('→ open <nom> pour ouvrir un projet', 'dim');
+      say(t('term.openHint'), 'dim');
     } },
-    open: { d: 'ouvrir un projet', run(arg) {
+    open: { run(arg) {
       const q = (arg || '').toLowerCase().replace(/\.\w+$/, '');
+      if (!q) return say(t('term.openUsage'), 'err');
       const p = SITE.projects.find((x) => x.slug === q || x.slug.startsWith(q) || (x.name || '').toLowerCase() === q);
-      if (!q) return say('usage : open <projet>   (ls pour la liste)', 'err');
-      if (!p) return say(`open : projet introuvable : ${arg}`, 'err');
-      say(`ouverture de ${p.slug}${p.ext || ''}…`, 'acc');
+      if (!p) return say(t('term.openNf', { x: arg }), 'err');
+      say(t('term.opening', { x: p.slug + (p.ext || '') }), 'acc');
       page.timers.push(setTimeout(() => go('#projet-' + p.slug), 350));
     } },
-    cat: { d: 'lire un fichier', run(arg) {
-      if (!arg || !/about/i.test(arg)) return say('cat : fichier introuvable (essaie : cat about.md)', 'err');
+    cat: { run(arg) {
+      if (!arg || !/about/i.test(arg)) return say(t('term.catNf'), 'err');
       say('# about.md', 'acc');
-      wrapText(SITE.about.intro || SITE.motto || '', cols()).forEach((l) => say(l));
-      if (SITE.availability) say('dispo : ' + SITE.availability, 'dim');
+      para(SITE.about.intro || SITE.motto || '');
+      say(t('term.dispo', { x: `${FORGE.label()} — ${FORGE.sub()}` }), 'dim');
     } },
-    cd: { d: 'changer de page', run(arg) {
+    cd: { run(arg) {
       const k = TERM_PAGES[(arg || '~').toLowerCase()];
-      if (!k) return say(`cd : page inconnue : ${arg}  (index · projets · a-propos · contact)`, 'err');
+      if (!k) return say(t('term.cdNf', { x: arg }), 'err');
       page.timers.push(setTimeout(() => go('#' + k), 200));
     } },
-    contact: { d: 'email et réseaux', run() {
+    contact: { run() {
       print(`email   <a class="tcmd" href="mailto:${esc(SITE.email)}">${esc(SITE.email)}</a>`);
       (SITE.socials || []).forEach((s) => print(`${esc(s.label.toLowerCase().padEnd(8))}<a class="tcmd" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.url.replace(/^https?:\/\//, ''))}</a>`));
-      print(`<span class="dim">ou plus simple :</span> ${cmdLink('ticket')}`);
+      print(`<span class="dim">${esc(t('term.orSimpler'))}</span> ${cmdLink('forge')} · ${cmdLink('ticket')}`);
     } },
-    ticket: { d: 'ouvrir une demande', run() { startTicket(); } },
-    status: { d: 'suivre mes tickets', run(arg) {
-      const list = loadTickets();
-      if (!list.length) return print(`<span class="dim">aucun ticket pour l'instant —</span> ${cmdLink('ticket')}`);
-      const t = arg ? list.find((x) => x.id.toLowerCase() === arg.toLowerCase()) : null;
-      if (arg && !t) return say(`status : ticket introuvable : ${arg}`, 'err');
-      if (t) { print(esc(ticketText(t, Math.min(cols(), 56))), 'pre'); return; }
-      list.slice().reverse().forEach((x) => print(`${cmdLink('status ' + x.id, x.id)}  <span class="acc">[${esc(x.status)}]</span>  <span class="dim">${esc(x.type)} · ${esc(x.date)}</span>`));
+    forge: { run(arg) { startForge(arg); } },
+    ticket: { run() { startTicket(); } },
+    status: { run(arg) { status(arg); } },
+    theme: { run(arg) {
+      const k = (arg || '').toLowerCase();
+      if (k && setAccent(k, true)) return print(`accent → <span class="acc">${esc(accentLabel(k))}</span>`);
+      if (k) say(t('term.themeNf', { x: arg }), 'err');
+      print(Object.entries(ACCENTS).filter(([, a]) => !a.secret || sealsDone()).map(([n, a]) => `<span style="color:${a.hex}">■</span> ${cmdLink('theme ' + n, n.padEnd(10))} <span class="dim">${esc(accentLabel(n))}${n === ACCENT.name ? ' ' + esc(t('term.current')) : ''}</span>`).join('\n'));
     } },
-    theme: { d: 'couleur d\'accent', run(arg) {
-      if (arg && setAccent(arg.toLowerCase(), true)) return print(`accent → <span class="acc">${esc(ACCENTS[arg.toLowerCase()].label)}</span>`);
-      if (arg) say(`theme : couleur inconnue : ${arg}`, 'err');
-      print(Object.entries(ACCENTS).map(([k, a]) => `<span style="color:${a.hex}">■</span> ${cmdLink('theme ' + k, k.padEnd(10))} <span class="dim">${esc(a.label)}${k === ACCENT.name ? ' (actuel)' : ''}</span>`).join('\n'));
+    lang: { run(arg) {
+      const l = (arg || '').toLowerCase().slice(0, 2);
+      if (LANGS.includes(l)) {
+        if (l === LANG) return say(t('term.langSet', { x: LANG_NAMES[l] }), 'dim');
+        say(t('term.langSet', { x: LANG_NAMES[l] }), 'acc');
+        page.timers.push(setTimeout(() => setLang(l), 350));
+        return;
+      }
+      print(LANGS.map((x) => `  ${cmdLink('lang ' + x, ('lang ' + x).padEnd(9))} <span class="dim" lang="${x}">${esc(LANG_NAMES[x])}${x === LANG ? ' ' + esc(t('term.current')) : ''}</span>`).join('\n'));
     } },
-    clear: { d: 'effacer', run() { out.innerHTML = ''; } },
+    duel: { run() { startDuel(); } },
+    claude: { run() {
+      print(`<span class="acc">claude</span> <span class="dim">${esc(t('claude.who'))}</span>`);
+      para(t('claude.p1'));
+      para(t('claude.p2'), 'dim');
+      para(t('claude.kaliso'), 'dim');
+      print(`<span class="dim">${esc(t('claude.ready'))}</span> ${cmdLink('forge')} · ${cmdLink('ticket')}`);
+    } },
+    clear: { run() { out.innerHTML = ''; } },
     // commandes cachées
-    date: { hidden: true, run() { say(new Date().toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })); } },
+    date: { hidden: true, run() { say(new Date().toLocaleString(LANG === 'ar' ? 'ar-MA' : LANG, { dateStyle: 'full', timeStyle: 'short' })); } },
     echo: { hidden: true, run(arg) { say(arg || ''); } },
     history: { hidden: true, run() { hist.forEach((c, i) => say(`${String(i + 1).padStart(3)}  ${c}`, 'dim')); } },
-    sudo: { hidden: true, run() { say('permission refusée : seul le chevalier détient la clé.', 'err'); } },
-    claude: { d: 'mon second sabre', run() {
-      print(`<span class="acc">claude</span> <span class="dim">— l'IA d'Anthropic, mon compagnon de forge</span>`);
-      wrapText('Je développe avec Claude au quotidien : il écrit vite, propose, explore ; je tiens la lame. Architecture, choix techniques, relecture ligne à ligne, sécurité, finition : tout passe par moi avant de partir en production.', cols()).forEach((l) => say(l));
-      wrapText('Le résultat : la cadence d\'une équipe, la cohérence d\'un seul artisan. Sites, apps, API, SaaS, agents IA, automatisations… aucune quête n\'est hors de portée.', cols()).forEach((l) => say(l, 'dim'));
-      print(`<span class="dim">prêt ?</span> ${cmdLink('ticket')}`);
-    } },
-    exit: { hidden: true, run() { say('déconnexion…', 'dim'); page.timers.push(setTimeout(() => go('#index'), 300)); } },
-    sound: { hidden: true, run(arg) { if ((arg === 'on') !== Sound.on) Sound.toggle(); say('son : ' + (Sound.on ? 'activé' : 'coupé'), 'dim'); } },
+    sudo: { hidden: true, run() { say(t('term.sudo'), 'err'); } },
+    exit: { hidden: true, run() { say(t('term.bye'), 'dim'); page.timers.push(setTimeout(() => go('#index'), 300)); } },
+    sound: { hidden: true, run(arg) { if ((arg === 'on') !== Sound.on) Sound.toggle(); say(t(Sound.on ? 'term.soundOn' : 'term.soundOff'), 'dim'); } },
     banner: { hidden: true, run() { printBanner(); } },
+    salam: { hidden: true, run() { say(t('term.salam'), 'acc'); Seals.find('salam'); } },
+    sceaux: { hidden: true, run() { seals(); } },
+    tresor: { hidden: true, run() { treasure(); } },
   };
-  const names = () => Object.keys(CMDS).filter((k) => !CMDS[k].hidden);
+  CMDS.kaliso = CMDS.forge;
+  CMDS['سلام'] = CMDS.salam; CMDS.seals = CMDS.sceaux; CMDS.treasure = CMDS.tresor; CMDS['كنز'] = CMDS.tresor;
+  const names = () => Object.keys(CMDS).filter((k) => !CMDS[k].hidden && k !== 'kaliso');
+
+  /* --- KALISO ------------------------------------------------------------------ */
+  function startForge(arg) {
+    const text = (arg || '').trim().replace(/^["«“]|["»”]$/g, '');
+    if (text) return runForge(text);
+    mode = { kind: 'forge' };
+    print(`<span class="acc">KALISO</span> <span class="dim">— ${esc(t('h.forge'))}</span>`);
+    para(t('fg.ask'));
+    say(t('fg.privacy'), 'dim');
+    setPS('forge ›');
+  }
+  async function runForge(text) {
+    if (text.length < 12) { say(t('fg.short'), 'err'); mode = { kind: 'forge' }; setPS('forge ›'); return; }
+    endMode();
+    busy = true; input.disabled = true;
+    draft = { text };
+    const heat = t('fg.heat');
+    const line = print('', 'dim forge-heat');
+    let k = 0;
+    const tick = () => {
+      k++;
+      const n = k % 14;
+      const sparks = Array.from({ length: 6 }, () => ' .·\'*'[Math.floor(Math.random() * 5)]).join('');
+      line.textContent = `${'▓'.repeat(n)}${'░'.repeat(13 - Math.min(13, n))} ${sparks}  ${heat[Math.min(heat.length - 1, Math.floor(k / 6))]}…`;
+      if (k % 4 === 1) Sound.play('select');
+    };
+    tick();
+    const iv = setInterval(tick, 230);
+    const t0 = performance.now();
+    let r;
+    try { r = await API.forge(text); } catch (e) { r = { ok: false, cold: true, reason: 'offline' }; }
+    // laisse la braise rougir au moins une seconde (sinon la réponse « tombe » trop sèchement)
+    const wait = Math.max(0, 1100 - (performance.now() - t0));
+    await new Promise((res) => page.timers.push(setTimeout(res, wait)));
+    clearInterval(iv); line.remove();
+    busy = false; input.disabled = false;
+    if (!IS_TOUCH) input.focus({ preventScroll: true });
+    if (!r || !r.ok) return cold(r || {});
+    draft = { text, plan: r.plan, id: r.id };
+    if (r.plan.offtopic) { para(r.plan.summary); say(t('fg.offtopic'), 'dim'); return; }
+    showPlan(r);
+  }
+  function showPlan(r) {
+    const p = r.plan, w = cols();
+    Sound.play('slash', { dir: 1 });
+    print(`<span class="acc">⚔ ${esc(t('fg.plan'))} — ${esc(p.title)}</span>`);
+    para(p.summary);
+    const head = (k) => print(`<span class="acc">// ${esc(t(k))}</span>`, 'gap');
+    head('fg.features'); p.features.forEach((f) => wrapText(f, w - 4).forEach((l, i) => say((i ? '    ' : '  · ') + l)));
+    head('fg.stack'); say('  ' + p.stack.join(' · '));
+    head('fg.steps'); p.steps.forEach((s, i) => wrapText(`${s.name}${s.detail ? ' — ' + s.detail : ''}`, w - 5).forEach((l, j) => say((j ? '     ' : `  ${i + 1}. `) + l)));
+    say(`  ${t('fg.complexity')} ${'▰'.repeat(p.complexity)}${'▱'.repeat(5 - p.complexity)} ${p.complexity}/5`, 'dim');
+    if (r.estimate) {
+      const e = r.estimate;
+      const price = t('fg.price', { a: nf(e.prix[0]), b: nf(e.prix[1]) });
+      const weeks = t('fg.weeks', { a: e.semaines[0], b: e.semaines[1] });
+      const body = `${price}  ·  ${weeks}`;
+      const bw = Math.min(w, Math.max(body.length, t('fg.range').length) + 4);
+      if (RTL) {
+        print(`<span class="acc">// ${esc(t('fg.range'))}</span>`, 'gap');
+        print(`<span class="estimate">${esc(body)}</span>`);
+      } else {
+        const hr = '+' + '-'.repeat(bw - 2) + '+';
+        const row = (s) => `| ${s}${' '.repeat(Math.max(0, bw - 4 - s.length))} |`;
+        print(`<span class="acc">${esc([hr, row(t('fg.range')), row(body), hr].join('\n'))}</span>`, 'pre gap');
+      }
+      para(t('fg.disclaimer'), 'dim');
+    }
+    if (p.questions && p.questions.length) { head('fg.questions'); p.questions.forEach((q) => wrapText(q, w - 4).forEach((l, i) => say((i ? '    ' : '  ? ') + l))); }
+    say(t('fg.credit', { model: r.model || 'open source', s: ((r.ms || 0) / 1000).toFixed(1) }), 'dim gap');
+    print(tHtml('fg.next', { ticket: cmdLink('ticket'), forge: cmdLink('forge') }));
+  }
+  function cold(r) {
+    say(t('fg.cold'), 'err');
+    say(r.reason === 'rate' ? t('fg.rate', { m: Math.max(1, Math.ceil((r.retry || 600) / 60)) }) : r.reason === 'quota' ? t('fg.quota') : t('fg.down'), 'dim');
+    print(tHtml('fg.keep', { ticket: cmdLink('ticket') }));
+  }
 
   /* --- assistant de ticket ------------------------------------------------- */
+  function ticketSteps(skip) {
+    return [
+      { k: 'nom', q: 'tk.name', v: (s) => s.length >= 2 || t('tk.vName') },
+      { k: 'email', q: 'tk.email', v: (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s) || t('tk.vEmail') },
+      { k: 'type', q: 'tk.type', opts: TK_TYPES, pre: 'type.' },
+      { k: 'budget', q: 'tk.budget', opts: TK_BUDGETS, pre: 'budget.' },
+      { k: 'delai', q: 'tk.delai', opts: TK_DELAIS, pre: 'delai.' },
+      { k: 'message', q: 'tk.message', v: (s) => s.length >= 10 || t('tk.vMsg') },
+    ].filter((s) => !skip.includes(s.k));
+  }
   function askStep() {
-    const st = TICKET_STEPS[wiz.i];
-    print(`<span class="acc">?</span> ${esc(st.q)} <span class="dim">(${wiz.i + 1}/${TICKET_STEPS.length})</span>`);
-    if (st.opts) print(st.opts.map((o, j) => `  ${cmdLink(String(j + 1), `${j + 1}) ${o}`)}`).join('\n'));
+    const st = mode.steps[mode.i];
+    print(`<span class="acc">?</span> ${esc(t(st.q))} <span class="dim">(${mode.i + 1}/${mode.steps.length})</span>`);
+    if (st.opts) st.opts.forEach((o, j) => print(`  ${cmdLink(String(j + 1), `${j + 1}) ${t(st.pre + o)}`)}`, 'opt'));
     setPS(`ticket/${st.k} ›`);
   }
   function startTicket() {
-    wiz = { i: 0, data: {}, confirm: false };
-    say('nouvelle quête — Ctrl+C ou « annuler » pour rebrousser chemin', 'dim');
+    const data = {}, skip = [];
+    if (draft && draft.text) {
+      data.message = draft.text + (draft.plan && !draft.plan.offtopic ? `\n\n— ${t('fg.planOf', { title: draft.plan.title, id: draft.id })}` : '');
+      skip.push('message');
+      if (draft.plan && !draft.plan.offtopic) { data.type = draft.plan.type; data.forgeId = draft.id; skip.push('type'); }
+    }
+    mode = { kind: 'ticket', i: 0, data, steps: ticketSteps(skip), confirm: false };
+    say(t('tk.new'), 'dim');
+    if (data.forgeId) say(t('tk.prefilled'), 'acc');
     askStep();
   }
-  function endTicket(msg) { wiz = null; setPS(PS1); if (msg) say(msg, 'dim'); }
-  function wizInput(v) {
-    if (/^(annuler|cancel|quit|q)$/i.test(v)) return endTicket('ticket annulé.');
-    if (wiz.confirm) {
-      if (/^(o|oui|y|yes)$/i.test(v)) return finalize();
-      if (/^(n|non|no)$/i.test(v)) return endTicket('ticket abandonné. tape ticket pour recommencer.');
-      return say('réponds o (oui) ou n (non)', 'err');
+  function ticketInput(v) {
+    if (CANCEL.test(v)) return endMode(t('tk.cancelled'));
+    if (mode.confirm) {
+      if (YES.test(v)) return finalize();
+      if (NO.test(v)) return endMode(t('tk.dropped'));
+      return say(t('tk.yn'), 'err');
     }
-    const st = TICKET_STEPS[wiz.i];
+    const st = mode.steps[mode.i];
     let val = v.trim();
     if (st.opts) {
       const n = parseInt(val, 10);
-      const hit = (n >= 1 && n <= st.opts.length) ? st.opts[n - 1] : st.opts.find((o) => o.toLowerCase().startsWith(val.toLowerCase()) && val.length > 1);
-      if (!hit) return say(`choisis un numéro entre 1 et ${st.opts.length}`, 'err');
-      val = hit;
+      const hit = (n >= 1 && n <= st.opts.length) ? st.opts[n - 1] : st.opts.find((o) => val.length > 1 && t(st.pre + o).toLowerCase().startsWith(val.toLowerCase()));
+      if (!hit) return say(t('tk.pick', { n: st.opts.length }), 'err');
+      mode.data[st.k] = hit;
+      print(`<span class="dim">  ✓ ${esc(t(st.pre + hit))}</span>`);
     } else {
       const ok = st.v(val);
       if (ok !== true) return say(ok, 'err');
+      mode.data[st.k] = val;
+      print(`<span class="dim">  ✓ ${esc(val.length > 60 ? val.slice(0, 57) + '…' : val)}</span>`);
     }
-    wiz.data[st.k] = val;
-    print(`<span class="dim">  ✓ ${esc(val.length > 60 ? val.slice(0, 57) + '…' : val)}</span>`);
-    wiz.i++;
-    if (wiz.i < TICKET_STEPS.length) return askStep();
+    mode.i++;
+    if (mode.i < mode.steps.length) return askStep();
     // récapitulatif
     const d = new Date();
-    const id = `KAL-${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 0xffff).toString(16).toUpperCase().padStart(4, '0')}`;
-    wiz.ticket = { id, status: 'BROUILLON', ...wiz.data,
-      priorite: /Urgent/.test(wiz.data.delai) ? 'haute' : /1 mois/.test(wiz.data.delai) ? 'normale' : 'basse',
-      date: d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) };
-    print(esc(ticketText(wiz.ticket, Math.min(cols(), 56))), 'pre');
-    print(`<span class="acc">?</span> Envoyer ce ticket au forgeron ? ${cmdLink('o', '[o]ui')} / ${cmdLink('n', '[n]on')}`);
-    wiz.confirm = true;
-    setPS('ticket/envoyer ›');
+    // le numéro définitif est attribué par la forge (ou tiré au sort si l'envoi passe par l'email)
+    const ymd = `${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    const dl = mode.data.delai;
+    mode.ticket = { id: `KAL-${ymd}-····`, ymd, status: 'draft', ...mode.data,
+      priorite: dl === 'urgent' ? 'haute' : dl === '1m' ? 'normale' : 'basse',
+      date: d.toLocaleDateString(LANG === 'ar' ? 'fr-FR' : LANG) + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) };
+    print(esc(ticketText(mode.ticket, Math.min(cols(), 56))), 'pre');
+    print(`<span class="acc">?</span> ${esc(t('tk.send'))} ${cmdLink(LANG === 'fr' ? 'o' : 'y', t('tk.yes'))} / ${cmdLink('n', t('tk.no'))}`);
+    mode.confirm = true;
+    setPS('ticket ›');
   }
   async function finalize() {
-    const t = { ...wiz.ticket, status: 'OUVERT' };
-    endTicket();
-    last = t;
-    const list = loadTickets(); list.push(t); saveTickets(list);
-    const txt = ticketText(t, 50);
-    const ep = SITE.ticket && SITE.ticket.endpoint;
-    if (ep) {
-      say('transmission…', 'dim');
-      try {
-        const r = await fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ ...t, _subject: `[${t.id}] ${t.type} — ${t.nom}`, ticket: txt }) });
-        if (!r.ok) throw new Error(r.status);
-        print(`<span class="acc">✓ ticket ${esc(t.id)} transmis.</span> réponse sous 48 h à ${esc(t.email)}.`);
-        print(`<span class="dim">suivi :</span> ${cmdLink('status ' + t.id)}`);
-        return;
-      } catch (e) { say('transmission impossible, passage par l\'email.', 'err'); }
+    const tk = { ...mode.ticket };
+    endMode();
+    busy = true; input.disabled = true;
+    say(t('tk.sending'), 'dim');
+    let r = null;
+    try {
+      r = await API.ticket({ name: tk.nom, email: tk.email, type: tk.type, budget: tk.budget, deadline: tk.delai, lang: LANG, forgeId: tk.forgeId,
+        message: tk.message + (sealsDone() ? '\n\n⚜ 7/7' : ''), website: '' });
+    } catch (e) { r = null; }
+    busy = false; input.disabled = false;
+    if (!IS_TOUCH) input.focus({ preventScroll: true });
+    if (r && r.ok) {
+      Object.assign(tk, { id: r.id, key: r.key, status: r.status || 'nouveau' });
+      storeTicket(tk); last = tk; draft = null;
+      Sound.play('slash', { dir: -1 });
+      print(`<span class="acc">${esc(t('tk.sent', { id: tk.id }))}</span> ${esc(t('tk.replyBy', { email: tk.email }))}`);
+      print(`<span class="dim">${esc(t('tk.track'))}</span> ${cmdLink('status ' + tk.id)}`);
+      return;
     }
-    const href = mailtoFor(t, txt);
-    print(`<span class="acc">✓ ticket ${esc(t.id)} prêt.</span> ton client mail va s'ouvrir avec la demande préremplie : il ne reste qu'à l'envoyer.`);
-    print(`${'  '}<a class="tcmd" href="${esc(href)}">envoyer par email</a>   ${cmdLink('copier')}   ${cmdLink('telecharger')}   ${cmdLink('status ' + t.id, 'suivi')}`);
+    if (r && r.status === 429) { say(r.error || '429', 'err'); }
+    // repli : l'email prérempli
+    tk.id = `KAL-${tk.ymd}-${Math.floor(Math.random() * 0xffff).toString(16).toUpperCase().padStart(4, '0')}`;
+    tk.status = 'open';
+    storeTicket(tk); last = tk;
+    if (r && r.status && r.status !== 429) say(t('tk.fail'), 'err');
+    const href = mailtoFor(tk, ticketText(tk, 50));
+    print(`<span class="acc">${esc(t('tk.ready', { id: tk.id }))}</span>`);
+    print(`  <a class="tcmd" href="${esc(href)}">${esc(t('tk.byEmail'))}</a>   ${cmdLink('copier')}   ${cmdLink('telecharger')}   ${cmdLink('status ' + tk.id, t('tk.trackLabel'))}`);
     try { window.location.href = href; } catch (e) {}
   }
-  const mailtoFor = (t, txt) => `mailto:${SITE.email}?subject=${encodeURIComponent(`[${t.id}] ${t.type} — ${t.nom}`)}&body=${encodeURIComponent(txt + '\n\nEnvoyé depuis le terminal de ' + SITE.name)}`;
+  const mailtoFor = (tk, txt) => `mailto:${SITE.email}?subject=${encodeURIComponent(`[${tk.id}] ${lab('type.', tk.type)} — ${tk.nom}`)}&body=${encodeURIComponent(txt + '\n\n' + t('tk.mailFoot', { name: SITE.name }))}`;
+
+  async function status(arg) {
+    const list = loadTickets();
+    if (!list.length) return print(`<span class="dim">${esc(t('tk.none'))}</span> ${cmdLink('ticket')}`);
+    const refresh = async (tk) => {
+      if (!tk.key) return tk;
+      try { const r = await API.lookup(tk.id, tk.key); if (r.ok) { tk.status = r.status; tk.reply = r.reply || ''; storeTicket(tk); } } catch (e) {}
+      return tk;
+    };
+    if (arg) {
+      const tk = list.find((x) => x.id.toLowerCase() === arg.toLowerCase());
+      if (!tk) return say(t('tk.nf', { x: arg }), 'err');
+      if (tk.key) say(t('tk.checking'), 'dim');
+      await refresh(tk);
+      print(esc(ticketText(tk, Math.min(cols(), 56))), 'pre');
+      if (tk.reply) { print(`<span class="acc">${esc(t('tk.smith'))}</span>`); para(tk.reply); }
+      return;
+    }
+    if (list.some((x) => x.key)) say(t('tk.checking'), 'dim');
+    await Promise.all(list.slice(-6).map(refresh));
+    list.slice().reverse().forEach((x) => print(`${cmdLink('status ' + x.id, x.id)}  <span class="acc">[${esc(statusLabel(x.status))}]</span>  <span class="dim">${esc(lab('type.', x.type))} · ${esc(x.date)}</span>${x.reply ? ' <span class="acc">✉</span>' : ''}`));
+  }
   CMDS.copier = { hidden: true, async run() {
-    if (!last) return say('aucun ticket à copier', 'err');
-    try { await navigator.clipboard.writeText(ticketText(last, 50)); say('ticket copié dans le presse-papiers ✓', 'acc'); }
-    catch (e) { say('copie impossible ici — sélectionne le ticket à la main', 'err'); }
+    if (!last) return say(t('tk.noCopy'), 'err');
+    try { await navigator.clipboard.writeText(ticketText(last, 50)); say(t('tk.copied'), 'acc'); }
+    catch (e) { say(t('tk.copyFail'), 'err'); }
   } };
   CMDS.telecharger = { hidden: true, async run() {
-    if (!last) return say('aucun ticket à télécharger', 'err');
+    if (!last) return say(t('tk.noDl'), 'err');
     const filename = `${last.id}.txt`, data = ticketText(last, 50) + '\n';
     // dans la visionneuse d'artefacts claude.ai : passage par la capacité « downloads »
     if (window.claude && typeof window.claude.use === 'function') {
       try {
         const dl = await Promise.race([window.claude.use('downloads'), new Promise((r) => setTimeout(() => r(null), 1500))]);
         if (dl) {
-          try { await dl.save({ filename, data }); say(`${filename} enregistré`, 'acc'); }
-          catch (e) { say('téléchargement annulé', 'dim'); }
+          try { await dl.save({ filename, data }); say(t('tk.saved', { f: filename }), 'acc'); }
+          catch (e) { say(t('tk.dlCancel'), 'dim'); }
           return;
         }
       } catch (e) {}
     }
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([ticketText(last, 50) + '\n'], { type: 'text/plain;charset=utf-8' }));
-    a.download = `${last.id}.txt`; document.body.appendChild(a); a.click(); a.remove();
+    a.href = URL.createObjectURL(new Blob([data], { type: 'text/plain;charset=utf-8' }));
+    a.download = filename; document.body.appendChild(a); a.click(); a.remove();
     page.timers.push(setTimeout(() => URL.revokeObjectURL(a.href), 4000));
-    say(`${last.id}.txt téléchargé`, 'acc');
+    say(t('tk.downloaded', { f: filename }), 'acc');
   } };
-  CMDS.envoyer = { hidden: true, run() { if (!last) return say('aucun ticket à envoyer', 'err'); window.location.href = mailtoFor(last, ticketText(last, 50)); } };
-  CMDS.mail = CMDS.envoyer;
+  CMDS.envoyer = { hidden: true, run() { if (!last) return say(t('tk.noSend'), 'err'); window.location.href = mailtoFor(last, ticketText(last, 50)); } };
+  CMDS.copy = CMDS.copier; CMDS.download = CMDS.telecharger; CMDS.mail = CMDS.envoyer; CMDS.send = CMDS.envoyer;
+
+  /* --- duel ----------------------------------------------------------------------- */
+  function startDuel() {
+    mode = { kind: 'duel', me: 0, him: 0 };
+    print(esc(DUEL_ART.join('\n')), 'pre acc');
+    para(t('duel.intro'));
+    say(t('duel.rules'), 'dim');
+    const mv = t('duel.moves');
+    print(mv.map((m, i) => `  ${cmdLink(String(i + 1), `${i + 1}) ${m}`)}`).join('   '));
+    setPS('duel ›');
+  }
+  function duelInput(v) {
+    const s = v.trim().toLowerCase();
+    if (/^(fuir|flee|run|q|quit|annuler|cancel|اهرب)$/.test(s)) return endMode(t('duel.flee'));
+    let i = parseInt(s, 10) - 1;
+    if (!(i >= 0 && i <= 2)) { const all = UI['duel.moves'].flat(); const j = all.findIndex((m) => m.toLowerCase() === s); i = j >= 0 ? j % 3 : -1; }
+    if (i < 0) return say(t('duel.pick'), 'err');
+    const k = Math.floor(Math.random() * 3);
+    const mv = t('duel.moves');
+    say(t('duel.vs', { a: mv[i], b: mv[k] }), 'dim');
+    // l'estoc perce la taille, la taille brise la parade, la parade dévie l'estoc
+    if (i === k) say(t('duel.tie'));
+    else if ((i + 1) % 3 === k) { mode.me++; say(t('duel.hit'), 'acc'); Sound.play('select'); }
+    else { mode.him++; say(t('duel.hurt'), 'err'); Sound.play('click'); }
+    say(t('duel.score', { a: mode.me, b: mode.him }), 'dim');
+    if (mode.me >= 3) { Sound.play('slash', { dir: 1 }); endMode(); say(t('duel.win'), 'acc'); Seals.find('duel'); }
+    else if (mode.him >= 3) { endMode(); say(t('duel.lose'), 'err'); }
+  }
+
+  /* --- sceaux & trésor ---------------------------------------------------------- */
+  function seals() {
+    say(t('seal.progress', { n: Seals.count(), t: SEALS.length }), 'acc');
+    print(SEALS.map((id) => (Seals.has(id) ? `  <span class="acc">⟐</span> ${esc(t('seal.' + id))}` : `  <span class="dim">◇ ???  — ${esc(t('hint.' + id))}</span>`)).join('\n'));
+    if (Seals.all()) print(`  → ${cmdLink('tresor')}`);
+  }
+  function treasure() {
+    if (!Seals.all()) return say(t('treasure.locked', { n: Seals.count(), t: SEALS.length }), 'err');
+    print(esc(['      __________', '     /\\  ⚜  ⚜  \\', '    /  \\________\\', '    \\  /  ⟐⟐⟐   /', '     \\/________/'].join('\n')), 'pre acc');
+    para(t('treasure.open'));
+    print(`  ${cmdLink('theme or')}`);
+  }
 
   /* --- exécution --------------------------------------------------------------- */
   function run(line, echo = true) {
+    if (busy) return;
     const v = line.trim();
     if (echo) print(`<span class="acc">${esc(ps1.textContent)}</span> ${esc(v)}`, 'echo');
-    if (wiz) return wizInput(v);
+    if (mode && mode.kind === 'ticket') return ticketInput(v);
+    if (mode && mode.kind === 'duel') return duelInput(v);
+    if (mode && mode.kind === 'forge') {
+      if (CANCEL.test(v)) return endMode();
+      // une vraie commande tapée par réflexe ? on sort du mode forge et on l'exécute
+      const w = v.split(/\s+/);
+      if (!(w.length <= 2 && CMDS[w[0].toLowerCase()])) { if (v) runForge(v); return; }
+      endMode();
+    }
     if (!v) return;
     hist.push(v); hi = hist.length;
     const [c, ...rest] = v.split(/\s+/);
     const cmd = CMDS[c.toLowerCase()];
-    if (!cmd) return print(`<span class="err">commande introuvable : ${esc(c)}</span> <span class="dim">— tape</span> ${cmdLink('help')}`);
+    if (!cmd) return print(`<span class="err">${esc(t('term.unknown', { x: c }))}</span> <span class="dim">${esc(t('term.typeHelp'))}</span> ${cmdLink('help')}`);
     cmd.run(rest.join(' '));
   }
-  function printBanner() {
-    print(TERM_BANNER.map(esc).join('\n'), 'banner pre');
-  }
+  function printBanner() { print(TERM_BANNER.map(esc).join('\n'), 'banner pre'); }
   function complete() {
     const v = input.value;
     const parts = v.split(/\s+/);
@@ -281,8 +482,9 @@ function PageTerminal() {
     if (parts.length <= 1) pool = names();
     else if (parts[0] === 'open') pool = SITE.projects.map((p) => p.slug);
     else if (parts[0] === 'cd') pool = ['index', 'projets', 'a-propos', 'contact'];
-    else if (parts[0] === 'theme') pool = Object.keys(ACCENTS);
-    else if (parts[0] === 'status') pool = loadTickets().map((t) => t.id);
+    else if (parts[0] === 'theme') pool = Object.keys(ACCENTS).filter((k) => !ACCENTS[k].secret || sealsDone());
+    else if (parts[0] === 'lang') pool = LANGS;
+    else if (parts[0] === 'status') pool = loadTickets().map((x) => x.id);
     else return;
     const cur = parts[parts.length - 1].toLowerCase();
     const hits = pool.filter((x) => x.toLowerCase().startsWith(cur));
@@ -294,11 +496,14 @@ function PageTerminal() {
     setPS(PS1);
     form.addEventListener('submit', (e) => { e.preventDefault(); const v = input.value; input.value = ''; run(v); });
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Tab') { e.preventDefault(); if (!wiz) complete(); }
-      else if (e.key === 'ArrowUp' && !wiz) { e.preventDefault(); if (hi > 0) { hi--; input.value = hist[hi]; } }
-      else if (e.key === 'ArrowDown' && !wiz) { e.preventDefault(); if (hi < hist.length) { hi++; input.value = hist[hi] || ''; } }
-      else if (e.key === 'c' && e.ctrlKey && !window.getSelection().toString()) { e.preventDefault(); print(`<span class="acc">${esc(ps1.textContent)}</span> ${esc(input.value)}^C`, 'echo'); input.value = ''; if (wiz) endTicket('ticket annulé.'); }
-      else if (e.key === 'l' && e.ctrlKey) { e.preventDefault(); out.innerHTML = ''; }
+      if (e.key === 'Tab') { e.preventDefault(); if (!mode) complete(); }
+      else if (e.key === 'ArrowUp' && !mode) { e.preventDefault(); if (hi > 0) { hi--; input.value = hist[hi]; } }
+      else if (e.key === 'ArrowDown' && !mode) { e.preventDefault(); if (hi < hist.length) { hi++; input.value = hist[hi] || ''; } }
+      else if (e.key === 'c' && e.ctrlKey && !window.getSelection().toString()) {
+        e.preventDefault();
+        print(`<span class="acc">${esc(ps1.textContent)}</span> ${esc(input.value)}^C`, 'echo'); input.value = '';
+        if (mode) endMode(mode.kind === 'ticket' ? t('tk.cancelled') : '');
+      } else if (e.key === 'l' && e.ctrlKey) { e.preventDefault(); out.innerHTML = ''; }
     });
     // clic : commandes cliquables, et focus sur la ligne de saisie
     el.addEventListener('click', (e) => {
@@ -316,8 +521,12 @@ function PageTerminal() {
     gsap.to($$('.term-chips button', el), { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', stagger: 0.05, delay: delay + 0.5 });
     page.timers.push(setTimeout(() => {
       printBanner();
-      print(`<span class="dim">${esc(SITE.os)} ${esc(SITE.version)} — terminal de</span> <span class="acc">${esc(SITE.name)}</span>`);
-      print(`tape ${cmdLink('help')} pour la liste des commandes, ${cmdLink('ticket')} pour ouvrir une quête, ou ${cmdLink('claude')} pour savoir comment je travaille.`);
+      print(`<span class="dim">${esc(SITE.os)} ${esc(SITE.version)} — ${esc(t('term.of'))}</span> <span class="acc">${esc(SITE.name)}</span>`);
+      print(tHtml('term.intro', { help: cmdLink('help'), forge: cmdLink('forge'), ticket: cmdLink('ticket') }));
+      // arrivée depuis « forge allumée » ou le contact : KALISO écoute déjà
+      let auto = null;
+      try { auto = sessionStorage.getItem('kaliso-run'); sessionStorage.removeItem('kaliso-run'); } catch (e) {}
+      if (auto === 'forge' || auto === 'ticket') run(auto);
       if (!IS_TOUCH) input.focus({ preventScroll: true });
     }, (delay + 0.5) * 1000));
   };

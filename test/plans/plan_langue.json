@@ -1,0 +1,1 @@
+{"hash":"#a-propos","query":"?lang=fr","steps":[["wait",8000],["click",60,56],["wait",800],["js","document.querySelector('[data-lang=ar]').click(), 1"],["wait",250],["shot","r1.png"],["wait",1200],["shot","r2.png"],["wait",2500],["shot","r3.png"],["js","[document.documentElement.lang, location.href, __app.key, JSON.parse(localStorage.getItem('kaliso-langs'))]"]]}

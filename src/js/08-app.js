@@ -49,7 +49,7 @@ function updateCurrent() {
   $$('.menu-link').forEach((a) => {
     if (a.getAttribute('href') === `#${k}`) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
-  const titles = { index: SITE.role, projets: 'Projets', 'a-propos': 'À propos', contact: 'Contact', '404': 'Introuvable' };
+  const titles = { index: SITE.role, projets: t('title.work'), 'a-propos': t('title.about'), contact: t('title.contact'), terminal: t('title.terminal'), '404': t('title.404') };
   const p = SITE.projects.find((x) => `projet-${x.slug}` === App.key);
   document.title = `${p ? p.name + p.ext : titles[App.key] || ''} — ${SITE.name}`;
 }
@@ -204,7 +204,7 @@ function runPreloader(onReveal) {
   const counter = $('.preloader-counter', pre);
   const log = $('.preloader-log', pre);
   const T = App.trans;
-  $('.pt-os', pre).textContent = `${SITE.os} ${SITE.version} — forge`;
+  $('.pt-os', pre).textContent = `${SITE.os} ${SITE.version} — ${t('pre.os')}`;
   const forge = new Forge($('canvas.forge', pre));
   // progression : la garde et la poignée se forment, puis la lame avance par bonds (rythme du compteur)
   const st = { hilt: 0, v: 0 };
@@ -230,12 +230,13 @@ function runPreloader(onReveal) {
       .to(cols[0], { yPercent: -Math.floor(n / 10) * 10, duration: 0.75, ease: 'hop' }, t)
       .to(cols[1], { yPercent: -(n % 10) * 10, duration: 0.75, ease: 'hop' }, t);
   });
+  const dots = (s) => s + ' ' + '.'.repeat(Math.max(3, 26 - s.length)) + ' ';
   const lines = [
-    [`${SITE.os} ${SITE.version} — démarrage`, ''],
-    ['allumage de la forge ....... ', 'ok'],
-    ['invocation de claude ....... ', 'ok'],
-    ['trempe du cimeterre ........ ', 'ok'],
-    ['statut 200 — marhaba', ''],
+    [`${SITE.os} ${SITE.version} — ${t('pre.boot')}`, ''],
+    [dots(t('pre.forge')), 'ok'],
+    [dots(t('pre.claude')), 'ok'],
+    [dots(t('pre.temper')), 'ok'],
+    [t('pre.ready'), ''],
   ];
   lines.forEach(([txt, ok], i) => {
     tl.call(() => {
@@ -302,6 +303,32 @@ function runPreloader(onReveal) {
   }, null, end + 0.85);
 }
 
+// après un changement de langue : pas de forge, un voile tranché d'un coup de lame
+function runRelang(onReveal) {
+  $('.preloader').remove();
+  const T = App.trans;
+  const mk = () => {
+    const v = document.createElement('div');
+    v.className = 'lang-veil';
+    v.setAttribute('aria-hidden', 'true');
+    v.innerHTML = `<span>${esc(LANG_NAMES[LANG])}</span>`;
+    document.body.appendChild(v);
+    return v;
+  };
+  const halves = [mk(), mk()];
+  gsap.delayedCall(0.3, () => {
+    Sound.play('slash', { dir: T && T.nextDir ? T.nextDir() : 1 });
+    if (T && T.c) T.c.style.zIndex = '1001';
+    gsap.delayedCall(0.95, () => { GLHOLD.on = false; });
+    const p = T ? T.slashCut(halves, onReveal) : Promise.resolve(onReveal());
+    Promise.resolve(p).then(() => {
+      GLHOLD.on = false;
+      halves.forEach((h) => h.remove());
+      if (T && T.c) T.c.style.zIndex = '';
+    });
+  });
+}
+
 function revealNav(delay = 0) {
   gsap.fromTo($$('.nav-line'), { y: 0, yPercent: 100 }, { y: 0, yPercent: 0, duration: REDUCED ? 0.01 : 1, ease: 'power4.out', stagger: STAGGER, delay });
   gsap.fromTo('.nav-snd', { opacity: 0 }, { opacity: 1, duration: 0.8, delay: delay + 0.3 });
@@ -310,12 +337,23 @@ function revealNav(delay = 0) {
 /* --- boot ---------------------------------------------------------------- */
 async function boot() {
   window.__app = App; window.__snd = Sound; window.__music = Music;
+  // textes fixes du gabarit HTML dans la langue courante
+  $$('[data-i18n]').forEach((n) => { n.textContent = t(n.dataset.i18n); });
+  $$('[data-i18n-aria]').forEach((n) => { n.setAttribute('aria-label', t(n.dataset.i18nAria)); });
   Sound.init();
   Music.init();
+  Seals.init();
+  FORGE.load(true);
   $$('[data-site-name]').forEach((n) => { n.textContent = SITE.name; });
   // crédit de la musique (exigé par la licence gratuite de Fesliyan Studios)
   const mc = $('.menu-credit'), M = SITE.music;
-  if (mc && M && M.src) mc.innerHTML = `♪ ${esc(M.title)} — ${esc(M.artist)}<br>musique de fond : <a href="${esc(M.creditUrl || '#')}" target="_blank" rel="noopener noreferrer">${esc(M.credit || '')}</a>`;
+  if (mc && M && M.src) mc.innerHTML = `♪ ${esc(M.title)} — ${esc(M.artist)}<br>${esc(t('music.credit'))} <a href="${esc(M.creditUrl || '#')}" target="_blank" rel="noopener noreferrer">${esc(M.credit || '')}</a>`;
+  // sélecteur de langue (menu)
+  const ml = $('.menu-lang');
+  if (ml) {
+    ml.innerHTML = LANGS.map((l) => `<button type="button" lang="${l}" data-lang="${l}" aria-pressed="${l === LANG}" aria-label="${esc(LANG_NAMES[l])}">${l === 'ar' ? 'ع' : l.toUpperCase()}</button>`).join('<span aria-hidden="true">/</span>');
+    ml.addEventListener('click', (e) => { const b = e.target.closest('[data-lang]'); if (b) { Sound.play('select'); setLang(b.dataset.lang); } });
+  }
   document.title = `${SITE.name} — ${SITE.role}`;
   await fontsReady();
   try { await Promise.race([Promise.all([document.fonts.load('500 40px "Geist Mono"'), document.fonts.load('400 80px "Jacquard 24"')]), wait(2000)]); } catch (e) {}
@@ -365,7 +403,10 @@ async function boot() {
     revealNav(0);
     App.page.intro(0.1, 'boot');
   };
+  let relang = null;
+  try { relang = sessionStorage.getItem('kaliso-relang'); sessionStorage.removeItem('kaliso-relang'); } catch (e) {}
   if (REDUCED) { $('.preloader').remove(); start(); }
+  else if (relang) runRelang(start);
   else runPreloader(start);
   setTimeout(() => { try { allCovers(); } catch (e) {} }, 1200);
 }

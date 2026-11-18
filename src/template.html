@@ -6,9 +6,29 @@
 <title>Sofiene Lamsouni — Développeur · sites, apps, API & IA</title>
 <meta name="description" content="Sofiene Lamsouni — développeur qui forge avec Claude : sites, applications, API, SaaS, agents IA et automatisations. Tous projets, toutes tailles.">
 <meta name="theme-color" content="#0b0d0b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0d0b'/%3E%3Ctext x='16' y='23' font-family='monospace' font-size='20' font-weight='700' text-anchor='middle' fill='%23e9e6dd'%3EK%3C/text%3E%3C/svg%3E">
+<link rel="alternate" hreflang="fr" href="__SITE_URL__/?lang=fr">
+<link rel="alternate" hreflang="en" href="__SITE_URL__/?lang=en">
+<link rel="alternate" hreflang="ar" href="__SITE_URL__/?lang=ar">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="KALISO — Sofiene Lamsouni">
+<meta property="og:title" content="Sofiene Lamsouni — Développeur × Claude">
+<meta property="og:description" content="Sites, apps, API, SaaS, agents IA et automatisations. Décris ta quête à KALISO, l'esprit de la forge.">
+<meta property="og:image" content="__SITE_URL__/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Le chevalier ASCII de KALISO, cimeterre au poing, sur fond noir.">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="ar_MA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sofiene Lamsouni — Développeur × Claude">
+<meta name="twitter:description" content="Sites, apps, API, SaaS, agents IA et automatisations. Décris ta quête à KALISO.">
+<meta name="twitter:image" content="__SITE_URL__/assets/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500&family=Geist:wght@300;400;500;800;900&family=Instrument+Serif:ital@0;1&family=UnifrakturMaguntia&family=Jacquard+24&family=Noto+Kufi+Arabic:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500&family=Geist:wght@300;400;500;800;900&family=Instrument+Serif:ital@0;1&family=UnifrakturMaguntia&family=Jacquard+24&family=Noto+Kufi+Arabic:wght@300;400;500;700&display=swap">
+<script>try{if(sessionStorage.getItem('kaliso-relang'))document.documentElement.classList.add('is-relang')}catch(e){}</script>
 <style>
 /*__CSS__*/
 </style>
@@ -16,26 +36,26 @@
 <body>
 <canvas class="background" aria-hidden="true"></canvas>
 
-<nav class="nav" aria-label="Principale">
+<nav class="nav" aria-label="Principale" data-i18n-aria="nav.main">
   <div class="container">
     <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-panel">
-      <span class="nav-mask"><span class="nav-line"><span class="menu-toggle-mask"><span class="menu-toggle-word">Menu</span><span class="menu-toggle-word" aria-hidden="true">Fermer</span></span></span></span>
+      <span class="nav-mask"><span class="nav-line"><span class="menu-toggle-mask"><span class="menu-toggle-word" data-i18n="nav.menu">Menu</span><span class="menu-toggle-word" aria-hidden="true" data-i18n="nav.close">Fermer</span></span></span></span>
     </button>
     <div class="menu-panel" id="menu-panel" inert>
-      <div class="menu-meta"><span>~/nav</span><button class="snd-toggle" type="button" aria-pressed="true">son : on</button></div>
+      <div class="menu-meta"><span>~/nav</span><button class="snd-toggle" type="button" aria-pressed="true">son : on</button><div class="menu-lang" role="group" aria-label="Langue" data-i18n-aria="lang.switch"></div></div>
       <p class="menu-credit"></p>
       <ul class="menu-links">
-        <li><a class="menu-link" href="#index"><span class="menu-line-mask"><span class="menu-line"><span class="menu-idx">00</span>Index</span></span></a></li>
-        <li><a class="menu-link" href="#projets"><span class="menu-line-mask"><span class="menu-line"><span class="menu-idx">01</span>Projets</span></span></a></li>
-        <li><a class="menu-link" href="#a-propos"><span class="menu-line-mask"><span class="menu-line"><span class="menu-idx">02</span>À propos</span></span></a></li>
-        <li><a class="menu-link" href="#contact"><span class="menu-line-mask"><span class="menu-line"><span class="menu-idx">03</span>Contact</span></span></a></li>
-        <li><a class="menu-link" href="#terminal"><span class="menu-line-mask"><span class="menu-line"><span class="menu-idx">04</span>Terminal</span></span></a></li>
+        <li><a class="menu-link" href="#index"><span class="menu-line-mask"><span class="menu-line"><span class="menu-idx">00</span><span data-i18n="menu.index">Index</span></span></span></a></li>
+        <li><a class="menu-link" href="#projets"><span class="menu-line-mask"><span class="menu-line"><span class="menu-idx">01</span><span data-i18n="menu.work">Projets</span></span></span></a></li>
+        <li><a class="menu-link" href="#a-propos"><span class="menu-line-mask"><span class="menu-line"><span class="menu-idx">02</span><span data-i18n="menu.about">À propos</span></span></span></a></li>
+        <li><a class="menu-link" href="#contact"><span class="menu-line-mask"><span class="menu-line"><span class="menu-idx">03</span><span data-i18n="menu.contact">Contact</span></span></span></a></li>
+        <li><a class="menu-link" href="#terminal"><span class="menu-line-mask"><span class="menu-line"><span class="menu-idx">04</span><span data-i18n="menu.terminal">Terminal</span></span></span></a></li>
       </ul>
     </div>
     <a href="#index" class="nav-home"><span class="nav-mask"><span class="nav-line" data-site-name>Sofiene Lamsouni</span></span></a>
     <div class="nav-right">
-      <button class="nav-snd" type="button" aria-pressed="true" aria-label="Couper le son"><span></span><span></span><span></span><span></span></button>
-      <a href="#contact" class="nav-cta"><span class="nav-mask"><span class="nav-line">Contact</span></span></a>
+      <button class="nav-snd" type="button" aria-pressed="true" aria-label="Couper le son" data-i18n-aria="snd.mute"><span></span><span></span><span></span><span></span></button>
+      <a href="#contact" class="nav-cta"><span class="nav-mask"><span class="nav-line" data-i18n="nav.contact">Contact</span></span></a>
     </div>
   </div>
 </nav>
@@ -50,8 +70,8 @@
   <p class="preloader-counter"><span class="digit-col"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span><span class="digit-col"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span><span class="pc-unit">%</span></p>
   <div class="preloader-log"></div>
   <div class="pl-gate" hidden>
-    <button class="pl-enter" type="button"><span class="pl-key">[ Entrée ]</span> dégainer <span class="pl-note">♪ avec le son</span></button>
-    <button class="pl-mute" type="button">entrer sans son</button>
+    <button class="pl-enter" type="button"><span class="pl-key" data-i18n="gate.key">[ Entrée ]</span> <span data-i18n="gate.draw">dégainer</span> <span class="pl-note" data-i18n="gate.sound">♪ avec le son</span></button>
+    <button class="pl-mute" type="button" data-i18n="gate.mute">entrer sans son</button>
   </div>
 </div>
 

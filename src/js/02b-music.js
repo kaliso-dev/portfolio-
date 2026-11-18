@@ -128,8 +128,8 @@ const Music = {
     $$('.nav-snd').forEach((b) => {
       b.classList.toggle('is-playing', this.playing);
       b.setAttribute('aria-pressed', String(on));
-      b.setAttribute('aria-label', on ? 'Couper le son' : 'Activer le son');
+      b.setAttribute('aria-label', t(on ? 'snd.mute' : 'snd.unmute'));
     });
-    $$('.snd-toggle').forEach((b) => { b.textContent = `son : ${on ? 'on' : 'off'}`; b.setAttribute('aria-pressed', String(on)); });
+    $$('.snd-toggle').forEach((b) => { b.textContent = t(on ? 'snd.on' : 'snd.off'); b.setAttribute('aria-pressed', String(on)); });
   },
 };

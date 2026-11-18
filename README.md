@@ -5,18 +5,28 @@ Portfolio « KNIGHT.OS » : la mécanique de [zenobasi.com](https://zenobasi.com
 - **Chargement** : une épée ornementée se forge en ASCII, puis tranche l'écran (invite « dégainer » pour lancer la musique).
 - **Accueil** : chevalier SDF en temps réel converti en glyphes, mot géant KALISO, fond de soie animé par une vraie simulation de fluide.
 - **Transitions** : une lame tranche la page, avec le son d'épée.
-- **Pages** : projets (carrousel WebGL), à propos (arche en texte), contact, et un **terminal** interactif qui génère des tickets de demande.
+- **Pages** : projets (carrousel WebGL) avec études de cas, à propos (arche en texte), contact, et un **terminal** interactif.
+- **KALISO** (commande `forge`) : le visiteur décrit sa quête, un modèle open source (Workers AI) en tire un plan de bataille ; la fourchette de prix vient de ta grille, jamais du modèle. Le plan devient un ticket en un mot.
+- **Tickets** : envoyés à ton API, rangés dans ton **dashboard privé** (`/admin`), suivis par le visiteur avec `status`.
+- **Forge allumée** : ta disponibilité sur l'accueil, réglée d'un clic dans le dashboard.
+- **Trois langues** : français, anglais, arabe (de droite à gauche), sélecteur dans le menu ou `lang` dans le terminal.
+- **Sept sceaux** cachés dans le site (solutions : `docs/secrets.md`, attention divulgâcheur).
 
-Tout tient dans un seul fichier HTML généré, sans framework : GSAP, Lenis et three.js sont chargés depuis jsDelivr, les polices depuis Google Fonts.
+Le site tient dans un seul fichier HTML généré, sans framework : GSAP, Lenis et three.js sont chargés depuis jsDelivr, les polices depuis Google Fonts. L'API est un Worker Cloudflare (`worker/`).
+
+**Mise en ligne : voir [DEPLOIEMENT.md](DEPLOIEMENT.md)** (Cloudflare, gratuit, ~10 minutes).
 
 ## Structure
 
 ```
 src/
-  template.html     coquille HTML (nav, menu, écran de chargement)
+  template.html     coquille HTML (nav, menu, écran de chargement, balises d'aperçu)
   style.css         styles
+  projets/*.md      ← UNE FICHE PAR PROJET (FR / EN / AR + étude de cas) — gabarit : docs/gabarit-etude-de-cas.md
   js/               modules, concaténés dans l'ordre alphabétique
-    00-config.js    ← TOUT LE CONTENU : nom, email, couleur, projets, musique, tickets…
+    00-config.js    ← LE CONTENU : nom, email, couleur, textes, musique, adresse de l'API…
+    00b-i18n.js     traductions (interface + textes EN / AR)
+    00c-api.js      appels à l'API (KALISO, tickets, forge allumée)
     01-utils.js     utilitaires, couleur d'accent
     01b-sfx-data.js son d'épée (mp3 en base64)
     02-sound.js     effets sonores (Web Audio)
@@ -27,11 +37,17 @@ src/
     06-slider.js    carrousel WebGL
     07-pages.js     pages
     07b-forge.js    écran de chargement (épée forgée)
-    07c-terminal.js page terminal + tickets
-    08-app.js       routeur, menu, préchargement, démarrage
-  assets/audio/     musique d'ambiance
-build.py            assemble dist/index.html et copie src/assets
-netlify.toml        configuration Netlify
+    07c-terminal.js page terminal : KALISO, tickets, suivi, duel
+    07d-secrets.js  les sept sceaux
+    08-app.js       routeur, menu, langues, préchargement, démarrage
+  assets/           musique d'ambiance, image d'aperçu (og.png)
+worker/             API Cloudflare : KALISO, tickets, dashboard (/admin), forge allumée
+  src/tarifs.js     ← TA GRILLE TARIFAIRE
+  migrations/       tables de la base D1
+wrangler.toml       configuration Cloudflare (site + API)
+build.py            assemble dist/ (lit aussi src/projets/*.md)
+docs/               gabarit des études de cas, solutions des secrets
+netlify.toml        configuration Netlify (variante)
 test/               banc de test (Playwright) : captures et scénarios
 ```
 
@@ -46,14 +62,12 @@ Le contenu se règle dans `src/js/00-config.js` (objet `SITE`) :
 
 - `accent` : `zellige` (#127d5f, par défaut), `vert`, `ambre`, `laiton`, `majorelle`, `marrakech`. Les visiteurs peuvent aussi essayer `theme <couleur>` dans le terminal.
 - `music` : fichier, volume, début (saut du silence initial), `gate` (invite « dégainer » en fin de chargement).
-- `ticket.endpoint` : vide = les tickets partent par email prérempli ; avec l'URL d'un service de formulaire (Formspree, Getform…), ils arrivent automatiquement.
-- `projects` : les projets (actuellement des exemples fictifs). `cover` et `shots` acceptent de vraies images.
+- `api` : vide = l'API est à la même adresse que le site (tout sur Cloudflare). Sans API joignable, tout se replie : la forge reste « allumée » et les tickets partent par email prérempli.
+- Les textes anglais et arabes sont dans `src/js/00b-i18n.js` (`SITE_I18N`). Les projets portent leurs propres traductions.
 
-## Déployer sur Netlify
+Les projets d'exemple de `src/projets/` sont fictifs (`"exemple": true`) : remplace-les par tes vraies réalisations avec le gabarit `docs/gabarit-etude-de-cas.md`, à donner au Claude de chaque projet.
 
-1. Sur [app.netlify.com](https://app.netlify.com) : **Add new site → Import an existing project → GitHub**, puis choisir ce dépôt.
-2. Les réglages sont lus depuis `netlify.toml` (commande `python3 build.py`, dossier `dist`) : rien à remplir.
-3. **Deploy**. Chaque push sur `main` redéploie le site.
+Pour tester l'API en local : voir la fin de [DEPLOIEMENT.md](DEPLOIEMENT.md).
 
 ## Tests
 
