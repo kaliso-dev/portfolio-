@@ -1,0 +1,1 @@
+{"hash": "#index", "steps": [["wait", 9000], ["js", "document.querySelector('.pl-mute').click(), 1"], ["wait", 5000], ["js", "[document.querySelectorAll('.preloader').length, window.__snd.on, document.querySelector('.nav-snd').className, document.querySelector('.nav-snd').getAttribute('aria-pressed'), document.querySelector('.snd-toggle').textContent]"]], "autoplay": false}

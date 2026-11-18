@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sofiene Lamsouni — Développeur</title>
+<meta name="description" content="Portfolio — développeur full-stack et creative developer.">
+<meta name="theme-color" content="#0b0d0b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500&family=Geist:wght@300;400;500;800;900&family=Instrument+Serif:ital@0;1&family=UnifrakturMaguntia&family=Jacquard+24&family=Noto+Kufi+Arabic:wght@500&display=swap">
+<style>
+/*__CSS__*/
+</style>
+</head>
+<body>
+<canvas class="background" aria-hidden="true"></canvas>
+
+<nav class="nav" aria-label="Principale">
+  <div class="container">
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menu-panel">
+      <span class="nav-mask"><span class="nav-line"><span class="menu-toggle-mask"><span class="menu-toggle-word">Menu</span><span class="menu-toggle-word" aria-hidden="true">Fermer</span></span></span></span>
+    </button>
+    <div class="menu-panel" id="menu-panel" inert>
+      <div class="menu-meta"><span>~/nav</span><button class="snd-toggle" type="button" aria-pressed="true">son : on</button></div>
+      <ul class="menu-links">
+        <li><a class="menu-link" href="#index"><span class="menu-line-mask"><span class="menu-line"><span class="menu-idx">00</span>Index</span></span></a></li>
+        <li><a class="menu-link" href="#projets"><span class="menu-line-mask"><span class="menu-line"><span class="menu-idx">01</span>Projets</span></span></a></li>
+        <li><a class="menu-link" href="#a-propos"><span class="menu-line-mask"><span class="menu-line"><span class="menu-idx">02</span>À propos</span></span></a></li>
+        <li><a class="menu-link" href="#contact"><span class="menu-line-mask"><span class="menu-line"><span class="menu-idx">03</span>Contact</span></span></a></li>
+        <li><a class="menu-link" href="#terminal"><span class="menu-line-mask"><span class="menu-line"><span class="menu-idx">04</span>Terminal</span></span></a></li>
+      </ul>
+    </div>
+    <a href="#index" class="nav-home"><span class="nav-mask"><span class="nav-line" data-site-name>Sofiene Lamsouni</span></span></a>
+    <div class="nav-right">
+      <button class="nav-snd" type="button" aria-pressed="true" aria-label="Couper le son"><span></span><span></span><span></span><span></span></button>
+      <a href="#contact" class="nav-cta"><span class="nav-mask"><span class="nav-line">Contact</span></span></a>
+    </div>
+  </div>
+</nav>
+
+<div class="page"><main id="app"></main></div>
+
+<canvas class="transition" aria-hidden="true"></canvas>
+
+<div class="preloader" aria-hidden="true">
+  <canvas class="forge"></canvas>
+  <div class="preloader-top"><span class="pt-os"></span><span data-site-name>Sofiene Lamsouni</span></div>
+  <p class="preloader-counter"><span class="digit-col"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span><span class="digit-col"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span><span class="pc-unit">%</span></p>
+  <div class="preloader-log"></div>
+  <div class="pl-gate" hidden>
+    <button class="pl-enter" type="button"><span class="pl-key">[ Entrée ]</span> dégainer <span class="pl-note">♪ avec le son</span></button>
+    <button class="pl-mute" type="button">entrer sans son</button>
+  </div>
+</div>
+
+<noscript><p style="position:fixed;inset:0;display:grid;place-items:center">Activez JavaScript pour voir ce portfolio.</p></noscript>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/CustomEase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.15/dist/lenis.min.js"></script>
+<script type="module">
+/*__JS__*/
+</script>
+</body>
+</html>

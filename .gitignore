@@ -1,0 +1,16 @@
+# build (Netlify le régénère avec python3 build.py)
+dist/
+
+# banc de test : on garde le script, les dépendances et quelques scénarios
+test/*
+!test/shoot.py
+!test/package.json
+!test/package-lock.json
+!test/plans/
+!test/README.md
+
+# divers
+__pycache__/
+.DS_Store
+*.log
+.netlify/

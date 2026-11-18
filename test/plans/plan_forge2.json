@@ -1,0 +1,1 @@
+{"hash":"#index","steps":[["wait",1200],["js","(()=>{const t=window.__app.preTl; t.pause(); t.seek(2.6,false); return t.time()})()"],["wait",1500],["shot","s1.png"],["js","(()=>{const t=window.__app.preTl; t.seek(4.5,false); return 1})()"],["wait",1200],["shot","s2.png"],["js","(()=>{const t=window.__app.preTl; t.seek(4.8,false); return 1})()"],["wait",600],["shot","s3.png"]]}
