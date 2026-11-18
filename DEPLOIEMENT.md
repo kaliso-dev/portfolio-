@@ -14,6 +14,44 @@ rien ne casse, et tu ne paies rien.
 
 ---
 
+## La voie la plus simple : GitHub déploie tout seul (aucune commande à taper)
+
+Le dépôt contient `.github/workflows/deploy.yml` : à chaque push sur `main`, GitHub crée la base,
+construit le site et le met en ligne sur ton compte Cloudflare. Il lui faut seulement trois secrets.
+
+**1. Cloudflare — créer un jeton** (compte gratuit : [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up))
+
+- Va sur [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) → **Create Token**.
+- Choisis le modèle **Edit Cloudflare Workers** → **Use template**.
+- Dans « Permissions », clique **+ Add more** et ajoute : `Account` · `D1` · `Edit`.
+- « Account Resources » : ton compte. « Zone Resources » : `All zones`.
+- **Continue to summary** → **Create Token**, puis copie le jeton (il ne s'affiche qu'une fois).
+
+**2. Cloudflare — copier l'identifiant du compte**
+
+Sur [dash.cloudflare.com](https://dash.cloudflare.com), ouvre **Workers & Pages** : l'**Account ID** est dans la
+colonne de droite (bouton « copier »). Tu peux aussi le prendre dans l'adresse : `dash.cloudflare.com/<account-id>/…`.
+
+**3. GitHub — ranger les trois secrets**
+
+Sur [github.com/kaliso-dev/portfolio-/settings/secrets/actions](https://github.com/kaliso-dev/portfolio-/settings/secrets/actions),
+clique **New repository secret** trois fois :
+
+| Name | Secret |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | le jeton de l'étape 1 |
+| `CLOUDFLARE_ACCOUNT_ID` | l'identifiant de l'étape 2 |
+| `ADMIN_TOKEN` | le mot de passe de ton dashboard, que tu inventes (au moins 12 caractères) |
+
+**4. Lancer**
+
+Onglet **Actions** du dépôt → « Déployer sur Cloudflare » → **Run workflow**. Deux à trois minutes plus tard,
+le résumé affiche l'adresse du site et du dashboard. Ensuite, chaque push redéploie tout seul.
+
+Le reste de ce guide décrit la même chose à la main, depuis ton ordinateur.
+
+---
+
 ## Ce qu'il te faut
 
 - un compte Cloudflare gratuit : [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up) ;
