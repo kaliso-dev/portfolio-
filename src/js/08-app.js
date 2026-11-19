@@ -367,6 +367,8 @@ async function boot() {
     App.lenis = new Lenis({ duration: isMobile() ? 0.8 : 1.2, smoothWheel: true, touchMultiplier: isMobile() ? 1.5 : 2 });
     App.lenis.on('scroll', ScrollTrigger.update);
     gsap.ticker.add((t) => App.lenis.raf(t * 1000));
+    // le fond (et son verre) se dessine après le défilement : le verre colle aux éléments, sans décalage
+    if (App.bg && App.bg.tickFn) { gsap.ticker.remove(App.bg.tickFn); gsap.ticker.add(App.bg.tickFn); }
     // après un gel ponctuel, les animations reprennent où elles étaient au lieu de sauter à la fin
     gsap.ticker.lagSmoothing(300, 33);
   }

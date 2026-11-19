@@ -10,7 +10,7 @@ const SITE = {
   handle: 'lamsouni',
   role: 'Développeur · sites, apps, API & IA',
   email: 'kaliso.dev@gmail.com',
-  accent: 'zellige', // zellige (#127d5f) | vert | ambre | laiton | majorelle | marrakech
+  accent: 'blanc', // blanc (par défaut) | vert | ambre | laiton | majorelle | marrakech
   // API Cloudflare (KALISO, tickets, forge allumée). '' = même adresse que le site (tout sur Cloudflare).
   // Si le site reste sur Netlify : mets l'adresse du Worker, ex. 'https://kaliso.ton-compte.workers.dev'
   api: '',

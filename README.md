@@ -5,10 +5,11 @@ Portfolio « KNIGHT.OS » : la mécanique de [zenobasi.com](https://zenobasi.com
 - **Chargement** : une épée ornementée se forge en ASCII, puis tranche l'écran (invite « dégainer » pour lancer la musique).
 - **Accueil** : chevalier SDF en temps réel converti en glyphes, mot géant KALISO, fond de soie animé par une vraie simulation de fluide.
 - **Transitions** : une lame tranche la page, avec le son d'épée.
-- **Pages** : projets (carrousel WebGL) avec études de cas, à propos (arche en texte), contact, et un **terminal** interactif.
-- **KALISO** (commande `forge`) : le visiteur décrit sa quête, un modèle open source (Workers AI) en tire un plan de bataille ; la fourchette de prix vient de ta grille, jamais du modèle. Le plan devient un ticket en un mot.
+- **Pages** : projets (carrousel WebGL) avec études de cas, à propos (arche en texte), contact, et la **forge** (KALISO en mode visuel). Le **terminal** reste accessible depuis la forge (lien discret, `#terminal`).
+- **KALISO** (page Forge, ou commande `forge` du terminal) : le visiteur décrit sa quête dans une barre en verre liquide, un modèle open source (Workers AI) en tire un plan de bataille ; la fourchette de prix vient de ta grille, jamais du modèle. Le plan devient un ticket en un mot.
 - **Tickets** : envoyés à ton API, rangés dans ton **dashboard privé** (`/admin`), suivis par le visiteur avec `status`.
 - **Forge allumée** : ta disponibilité sur l'accueil, réglée d'un clic dans le dashboard.
+- **Verre liquide** (façon iOS 26) : les éléments `.lg` sont transparents ; leur verre (réfraction, reflet, flou) est dessiné dans le fond WebGL. Adapté de [archisvaze/liquid-glass](https://github.com/archisvaze/liquid-glass) (MIT). Repli en verre givré CSS si WebGL2 manque ou si le visiteur demande moins de transparence.
 - **Deux langues** : français et anglais, sélecteur dans le menu ou `lang` dans le terminal.
 - **Sept sceaux** cachés dans le site (solutions : `docs/secrets.md`, attention divulgâcheur).
 
@@ -38,6 +39,7 @@ src/
     07-pages.js     pages
     07b-forge.js    écran de chargement (épée forgée)
     07c-terminal.js page terminal : KALISO, tickets, suivi, duel
+    07e-forge-ui.js page forge : barre de chat, chargement, plan en carrousel + grille, ticket, mes quêtes
     07d-secrets.js  les sept sceaux
     08-app.js       routeur, menu, langues, préchargement, démarrage
   assets/           musique d'ambiance, image d'aperçu (og.png)
@@ -60,7 +62,7 @@ python3 -m http.server -d dist 8080  # puis http://localhost:8080
 
 Le contenu se règle dans `src/js/00-config.js` (objet `SITE`) :
 
-- `accent` : `zellige` (#127d5f, par défaut), `vert`, `ambre`, `laiton`, `majorelle`, `marrakech`. Les visiteurs peuvent aussi essayer `theme <couleur>` dans le terminal.
+- `accent` : `blanc` (#f2f0ea, par défaut), `vert`, `ambre`, `laiton`, `majorelle`, `marrakech`. Les visiteurs peuvent aussi essayer `theme <couleur>` dans le terminal.
 - `music` : fichier, volume, début (saut du silence initial), `gate` (invite « dégainer » en fin de chargement).
 - `api` : vide = l'API est à la même adresse que le site (tout sur Cloudflare). Sans API joignable, tout se replie : la forge reste « allumée » et les tickets partent par email prérempli.
 - Les textes anglais sont dans `src/js/00b-i18n.js` (`SITE_I18N`). Les projets portent leurs propres traductions.

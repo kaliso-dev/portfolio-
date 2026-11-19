@@ -106,7 +106,7 @@ function PageTerminal() {
   const CMDS = {
     help: { run() {
       const rows = [['whoami', 'h.whoami'], ['ls', 'h.ls'], ['open <projet>', 'h.open'], ['cat about.md', 'h.cat'], ['forge', 'h.forge'],
-        ['ticket', 'h.ticket'], ['status [id]', 'h.status'], ['claude', 'h.claude'], ['contact', 'h.contact'], ['lang [fr|en|ar]', 'h.lang'],
+        ['ticket', 'h.ticket'], ['status [id]', 'h.status'], ['claude', 'h.claude'], ['contact', 'h.contact'], ['lang [fr|en]', 'h.lang'],
         ['theme [couleur]', 'h.theme'], ['duel', 'h.duel'], ['visuel', 'h.visuel'], ['cd <page>', 'h.cd'], ['clear', 'h.clear']];
       print(rows.map(([c, d]) => `  ${cmdLink(c.startsWith('cat') ? 'cat about.md' : c.split(' ')[0], c)}${' '.repeat(Math.max(2, 18 - c.length))}<span class="dim">${esc(t(d))}</span>`).join('\n'));
       say('  ' + t('term.keys'), 'dim');

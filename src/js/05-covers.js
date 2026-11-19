@@ -195,14 +195,14 @@ function shotCode(p) {
       if (/^(\/\/|#)/.test(s)) col = 'rgba(240,236,226,.35)';
       else if (/^["'`]/.test(s)) col = '#e8c27a';
       else if (/^\d/.test(s)) col = hsl(p.hue, 80, 68);
-      else if (KW.test(s)) col = ACCENT.text;
+      else if (KW.test(s)) col = CODE.hex;
       else if (/^[A-Z][A-Za-z]+$/.test(s)) col = hsl(p.hue, 70, 72);
       KW.lastIndex = 0;
       g.fillStyle = col; g.fillText(s, x, y); x += cw * s.length;
     });
   });
   const yc = y0 + 100 + lines.length * lh + 10;
-  g.fillStyle = ACCENT.text; g.fillText('➜', x0 + 90, Math.min(yc, y0 + hh - 40));
+  g.fillStyle = CODE.hex; g.fillText('➜', x0 + 90, Math.min(yc, y0 + hh - 40));
   g.fillStyle = 'rgba(240,236,226,.6)'; g.fillText(`  ${p.slug} git:(main) ✓`, x0 + 90 + cw, Math.min(yc, y0 + hh - 40));
   grain(g, W, H, 10);
   return c.toDataURL('image/jpeg', 0.9);
@@ -238,7 +238,7 @@ function shotLog(p) {
     g.fillStyle = hsl(p.hue, 70, 62); g.fillText('#'.repeat(n), 640, y);
     g.fillStyle = 'rgba(240,236,226,.15)'; g.fillText('.'.repeat(28 - n), 640 + n * fs * 0.6, y);
     g.fillStyle = 'rgba(240,236,226,.5)'; g.fillText(`${ms}ms`.padStart(7, ' '), 1150, y);
-    g.fillStyle = ACCENT.text; g.fillText('OK', 1310, y);
+    g.fillStyle = CODE.hex; g.fillText('OK', 1310, y);
   }
   grain(g, W, H, 10);
   return c.toDataURL('image/jpeg', 0.9);

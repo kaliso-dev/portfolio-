@@ -44,7 +44,7 @@ window.addEventListener('pointermove', (e) => {
 const RAMP = ' .:;+*xoX#&$'; // trié par encre réelle (Geist Mono 500)
 /* --- couleur d'accent (changeable : commande « theme » du terminal) ------ */
 const ACCENTS = {
-  zellige: { hex: '#127d5f', label: ['vert zellige', 'zellige green'] },
+  blanc: { hex: '#f2f0ea', label: ['blanc', 'white'] },
   vert: { hex: '#4ade80', label: ['vert terminal', 'terminal green'] },
   ambre: { hex: '#f2a24a', label: ['ambre de forge', 'forge amber'] },
   laiton: { hex: '#d9b46a', label: ['laiton de Fès', 'Fez brass'] },
@@ -53,6 +53,8 @@ const ACCENTS = {
   // récompense des sept sceaux (07d-secrets.js)
   or: { hex: '#e3b23c', label: ['or des sept sceaux', 'gold of the seven seals'], secret: true },
 };
+// bleu ciel, pas trop clair : coloration du terminal et des captures de code
+const CODE = { hex: '#4ea8de', rgb: [78, 168, 222] };
 const accentLabel = (k) => { const l = ACCENTS[k].label; return Array.isArray(l) ? (l[LI] || l[0]) : l; };
 const sealsDone = () => { try { return JSON.parse(localStorage.getItem('kaliso-seals') || '[]').length >= 7; } catch (e) { return false; } };
 const hexRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -65,7 +67,7 @@ function legibleRgb(rgb, bg = [11, 13, 11], target = 4.7) {
   for (let i = 0; i < 40 && ratio(c) < target; i++) c = c.map((v) => Math.min(255, v + (255 - v) * 0.04 + 1.5));
   return c.map(Math.round);
 }
-const ACCENT = { name: 'zellige', hex: ACCENTS.zellige.hex, rgb: hexRgb(ACCENTS.zellige.hex), text: ACCENTS.zellige.hex, bright: hexRgb(ACCENTS.zellige.hex), subs: new Set() };
+const ACCENT = { name: 'blanc', hex: ACCENTS.blanc.hex, rgb: hexRgb(ACCENTS.blanc.hex), text: ACCENTS.blanc.hex, bright: hexRgb(ACCENTS.blanc.hex), subs: new Set() };
 function setAccent(name, persist = false) {
   const a = ACCENTS[name];
   if (!a || (a.secret && !sealsDone())) return false;
@@ -82,7 +84,7 @@ function setAccent(name, persist = false) {
   return true;
 }
 (() => {
-  let n = (typeof SITE !== 'undefined' && SITE.accent) || 'zellige';
+  let n = (typeof SITE !== 'undefined' && SITE.accent) || 'blanc';
   try { const saved = localStorage.getItem('kaliso-accent2'); if (saved && ACCENTS[saved] && (!ACCENTS[saved].secret || sealsDone())) n = saved; } catch (e) {}
   try { const q = new URLSearchParams(location.search).get('accent'); if (q && ACCENTS[q]) n = q; } catch (e) {}
   setAccent(n);
