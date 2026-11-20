@@ -457,7 +457,7 @@ footer .container { display: grid; grid-template-columns: repeat(6, 1fr); align-
    VERRE LIQUIDE — .lg : le verre est calculé dans le fond WebGL (03-gl.js) puis
    recopié dans un canvas placé dans l'élément. Repli : verre givré CSS.
    ========================================================================== */
-.lg { position: relative; color: var(--bone); background: rgb(233 230 221 / 0.07); border: 1px solid rgb(233 230 221 / 0.16); -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 12px 32px rgb(0 0 0 / 0.35); }
+.lg { position: relative; color: var(--bone); background: rgb(233 230 221 / 0.07); border: 1px solid rgb(233 230 221 / 0.16); -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 4px 14px rgb(0 0 0 / 0.1); }
 .lg.lg-pro { background: #f2f0ea; border-color: #f2f0ea; color: #0b0d0b; }
 html.lg-on .lg { isolation: isolate; background: transparent; border-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
 /* le verre de l'élément, dessiné par 03-gl.js : il déborde un peu pour l'ombre */
@@ -656,7 +656,18 @@ html.lg-on .lg.lg-pro { background: transparent; }
 .fx .fx-sub { margin-top: 0.6rem; color: var(--dim); font-size: 0.92rem; }
 .fx-qlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1rem; margin-top: 1.4rem; }
 .fx-q { display: flex; flex-direction: column; gap: 0.5rem; padding: 1.3rem 1.4rem; border: 1px solid var(--card-line); border-radius: 22px; background: var(--card); }
-.fx-q-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.fx-q-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; min-height: 30px; }
+.fx-q-head b { white-space: nowrap; }
+.fx-q-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.7rem; }
+.fx-qtop { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.fx .fx-qtop .fx-link { font-size: 0.82rem; }
+.fx .fx-qtop .fx-link.is-armed { color: #ff9d8a; }
+.fx-qdel { display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; flex: none; min-width: 30px; height: 30px; padding: 0; border-radius: 999px; color: var(--dim); transition: color 0.2s, background 0.2s, padding 0.3s; }
+.fx-qdel svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.fx-qdel span { display: none; font-size: 0.74rem; white-space: nowrap; }
+.fx-qdel:hover, .fx-qdel:focus-visible { color: var(--bone); background: rgb(233 230 221 / 0.08); }
+.fx-qdel.is-armed { padding: 0 0.7rem; color: #0b0d0b; background: #ff9d8a; }
+.fx-qdel.is-armed span { display: inline; }
 .fx-q-head b { font-family: var(--mono); font-weight: 400; font-size: 0.86rem; letter-spacing: 0.02em; }
 .fx-badge { padding: 0.2rem 0.6rem; border: 1px solid var(--faint); border-radius: 999px; color: var(--bone); font-size: 0.62rem; letter-spacing: 0.06em; white-space: nowrap; }
 .fx .fx-q p { font-size: 0.86rem; }

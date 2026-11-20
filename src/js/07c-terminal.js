@@ -22,6 +22,9 @@ const statusLabel = (s) => (s === 'draft' ? t('tk.draft') : s === 'open' ? t('tk
 function loadTickets() { try { return JSON.parse(localStorage.getItem('kaliso-tickets') || '[]'); } catch (e) { return []; } }
 function saveTickets(list) { try { localStorage.setItem('kaliso-tickets', JSON.stringify(list.slice(-12))); } catch (e) {} }
 function storeTicket(tk) { const list = loadTickets().filter((x) => x.id !== tk.id); list.push(tk); saveTickets(list); }
+// retire une quête de CE navigateur (Sofiene garde la demande dans son dashboard)
+function removeTicket(id) { saveTickets(loadTickets().filter((x) => x.id !== id)); }
+function clearTickets() { try { localStorage.removeItem('kaliso-tickets'); } catch (e) {} }
 
 function wrapText(str, w) {
   const out = [];

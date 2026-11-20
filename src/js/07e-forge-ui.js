@@ -74,7 +74,7 @@ function PageForge() {
     </div></div></section>
     <section class="fx-report" hidden><div class="container"><div class="fx-stage"></div></div></section>
     <section class="fx-quests" hidden><div class="container"><div class="fx-wide">
-      <p class="fx-kicker">${esc(t('gui.quests'))}</p>
+      <div class="fx-qtop"><p class="fx-kicker">${esc(t('gui.quests'))}</p><button type="button" class="fx-link" data-act="qclear">${esc(t('gui.qClear'))}</button></div>
       <p class="fx-sub">${esc(t('gui.questsSub'))}</p>
       <ul class="fx-qlist"></ul>
     </div></div></section>
@@ -587,9 +587,10 @@ function PageForge() {
     const list = loadTickets().slice(-6).reverse();
     const box = $('.fx-quests', el), ul = $('.fx-qlist', el);
     if (!list.length) { box.hidden = true; return; }
-    const row = (x) => `<li class="fx-q">
-      <div class="fx-q-head"><b>${esc(x.id)}</b><span class="fx-badge">${esc(statusLabel(x.status))}</span></div>
-      <p class="fx-dim">${esc(lab('type.', x.type))}${x.date ? ' · ' + esc(x.date) : ''}</p>
+    const row = (x) => `<li class="fx-q" data-id="${esc(x.id)}">
+      <div class="fx-q-head"><b>${esc(x.id)}</b>
+        <button type="button" class="fx-qdel" data-act="qdel" data-id="${esc(x.id)}" aria-label="${esc(t('gui.qDelLabel', { id: x.id }))}">${FX_ICON.x}<span>${esc(t('gui.qDelAsk'))}</span></button></div>
+      <div class="fx-q-meta"><span class="fx-badge">${esc(statusLabel(x.status))}</span><p class="fx-dim">${esc(lab('type.', x.type))}${x.date ? ' · ' + esc(x.date) : ''}</p></div>
       ${x.reply ? `<div class="fx-reply"><p class="fb-k">${esc(t('gui.reply'))}</p><p>${esc(x.reply)}</p></div>` : ''}
     </li>`;
     ul.innerHTML = list.map(row).join('');
@@ -597,10 +598,13 @@ function PageForge() {
     refresh();
     await Promise.all(list.map(async (x) => {
       if (!x.key) return;
-      try { const r = await API.lookup(x.id, x.key); if (r && r.ok) { x.status = r.status; x.reply = r.reply || ''; storeTicket(x); } } catch (e) {}
+      try { const r = await API.lookup(x.id, x.key); if (r && r.ok) { x.status = r.status; x.reply = r.reply || ''; if (loadTickets().some((y) => y.id === x.id)) storeTicket(x); } } catch (e) {}
     }));
     if (!el.isConnected) return;
-    ul.innerHTML = list.map(row).join('');
+    // une quête supprimée pendant la mise à jour ne revient pas
+    const still = new Set(loadTickets().map((y) => y.id));
+    ul.innerHTML = list.filter((x) => still.has(x.id)).map(row).join('');
+    box.hidden = !ul.children.length;
     refresh();
   }
 
@@ -624,6 +628,32 @@ function PageForge() {
       else if (k === 'send') openSheet();
       else if (k === 'close') closeSheet();
       else if (k === 'back') { showView('chat'); scrollTo($('.fx-bar-row', el), -(innerHeight * 0.55), 0.9); page.timers.push(setTimeout(() => !IS_TOUCH && input.focus({ preventScroll: true }), 700)); }
+      else if (k === 'qdel') {
+        // deux temps : « Supprimer ? » puis confirmation
+        if (!a.classList.contains('is-armed')) {
+          $$('.fx-qdel.is-armed', el).forEach((b) => b.classList.remove('is-armed'));
+          a.classList.add('is-armed');
+          page.timers.push(setTimeout(() => a.classList.remove('is-armed'), 3000));
+          return;
+        }
+        const id = a.dataset.id, li = a.closest('.fx-q');
+        removeTicket(id);
+        Sound.play('select');
+        const gone = () => { li.remove(); if (!$('.fx-q', el)) $('.fx-quests', el).hidden = true; refresh(); };
+        if (REDUCED) gone(); else gsap.to(li, { opacity: 0, y: -8, scale: 0.97, duration: 0.35, ease: 'power2.in', onComplete: gone });
+      }
+      else if (k === 'qclear') {
+        if (!a.classList.contains('is-armed')) {
+          a.classList.add('is-armed'); a.textContent = t('gui.qClearAsk');
+          page.timers.push(setTimeout(() => { a.classList.remove('is-armed'); a.textContent = t('gui.qClear'); }, 3000));
+          return;
+        }
+        a.classList.remove('is-armed'); a.textContent = t('gui.qClear');
+        clearTickets();
+        const box = $('.fx-quests', el);
+        const gone = () => { $('.fx-qlist', el).innerHTML = ''; box.hidden = true; refresh(); };
+        if (REDUCED) gone(); else gsap.to($$('.fx-q', el), { opacity: 0, y: -8, duration: 0.3, stagger: 0.04, ease: 'power2.in', onComplete: gone });
+      }
       else if (k === 'quests') { closeSheet(); page.timers.push(setTimeout(() => scrollTo($('.fx-quests', el), -120), 380)); }
       else if (k === 'restart') {
         if (Date.now() - armed > 3000) { armed = Date.now(); a.textContent = t('cv.restartAsk'); page.timers.push(setTimeout(() => { a.textContent = t('cv.restart'); }, 3000)); return; }

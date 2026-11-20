@@ -26,9 +26,9 @@ function glProgram(gl, fsSrc) {
    Le verre de chaque élément .lg est calculé ici (il réfracte la soie du fond), puis
    recopié dans un petit canvas placé DANS l'élément : il défile avec lui, sans décalage,
    même quand le navigateur fait défiler la page tout seul (doigt, barre de défilement). Réglages : épaisseur 37, biseau 60, IOR 3,
-   flou 5,5, spéculaire 0,45, teinte 8 %, ombre 0,5 ; reflet asymétrique
+   flou 5,5, spéculaire 0,45, teinte 8 %, ombre très légère (0,14) ; reflet asymétrique
    (lumière en haut à gauche) et légère dispersion sur les bords, plus proches d'Apple. */
-const GLASS = { thick: 37, bezel: 60, ior: 3.0, blur: 5.5, spec: 0.45, tint: 0.08, shadow: 0.5, max: 16, margin: 36 };
+const GLASS = { thick: 37, bezel: 60, ior: 3.0, blur: 5.5, spec: 0.45, tint: 0.08, shadow: 0.14, max: 16, margin: 36 };
 const GLASS_FRAG = `#version 300 es
 precision highp float;
 uniform sampler2D uSilk;
@@ -48,8 +48,8 @@ void main(){
   vec2 p = css - uR.xy; vec2 hs = uR.zw; float r = uP.x;
   float hov = uP.z, pro = uP.w;
   float sd = sdRR(p, hs, r);
-  float ds = max(sdRR(p - vec2(0.0, 6.0), hs, r), 0.0);
-  float sh = uShadow * exp(-ds * ds / 700.0) * 0.55;
+  float ds = max(sdRR(p - vec2(0.0, 3.0), hs, r), 0.0);
+  float sh = uShadow * exp(-ds * ds / 360.0) * 0.55;
   float d = -sd;
   float cov = smoothstep(0.0, 1.5, d);
   vec3 c = vec3(0.0);
