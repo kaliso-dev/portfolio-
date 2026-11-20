@@ -7,8 +7,9 @@ Portfolio « KNIGHT.OS » : la mécanique de [zenobasi.com](https://zenobasi.com
 - **Transitions** : une lame tranche la page, avec le son d'épée.
 - **Pages** : projets (carrousel WebGL) avec études de cas, à propos (arche en texte), contact, et la **forge** (KALISO en mode visuel). Le **terminal** reste accessible depuis la forge (lien discret, `#terminal`).
 - **KALISO** (page Forge) : le visiteur discute avec KALISO, un modèle open source (Workers AI) : il pose ses questions, propose plusieurs façons de construire le projet et affine ; ses réponses arrivent mot à mot. Quand le visiteur a fini, « Voir le compte rendu » produit le plan (carrousel + vue d'ensemble), qu'il envoie à Sofiene en ticket. La fourchette de prix vient de ta grille, jamais du modèle (les prix et durées sont filtrés dans la conversation). La commande `forge` du terminal fait un plan en une fois.
+- **KALISO sur le web** : il lit le site dont le visiteur donne l'adresse ; avec le secret facultatif `TAVILY_API_KEY`, il peut aussi chercher un nom d'entreprise (voir DEPLOIEMENT.md). Il répond toujours dans la langue du visiteur.
 - **Illustrations du compte rendu** : dépose `plan.webp`, `features.webp`, `stack.webp`, `steps.webp`, `range.webp`, `questions.webp` dans `src/assets/forge/` (voir le LISEZ-MOI du dossier) ; sans image, la tuile affiche un grand numéro.
-- **Police** : Google Sans Flex pour les textes ; Geist Mono reste pour le terminal et le code.
+- **Polices** : Fraunces pour les titres, Google Sans Flex pour les textes ; Geist Mono reste pour le terminal et le code.
 - **Tickets** : envoyés à ton API, rangés dans ton **dashboard privé** (`/admin`), suivis par le visiteur avec `status`.
 - **Forge allumée** : ta disponibilité sur l'accueil, réglée d'un clic dans le dashboard.
 - **Verre liquide** (façon iOS 26) : les éléments `.lg` sont transparents ; leur verre (réfraction, reflet, flou) est dessiné dans le fond WebGL. Adapté de [archisvaze/liquid-glass](https://github.com/archisvaze/liquid-glass) (MIT). Repli en verre givré CSS si WebGL2 manque ou si le visiteur demande moins de transparence.

@@ -102,7 +102,7 @@ function PageTerminal() {
     help: { run() {
       const rows = [['whoami', 'h.whoami'], ['ls', 'h.ls'], ['open <projet>', 'h.open'], ['cat about.md', 'h.cat'], ['forge', 'h.forge'],
         ['ticket', 'h.ticket'], ['status [id]', 'h.status'], ['claude', 'h.claude'], ['contact', 'h.contact'], ['lang [fr|en]', 'h.lang'],
-        ['theme [couleur]', 'h.theme'], ['visuel', 'h.visuel'], ['cd <page>', 'h.cd'], ['clear', 'h.clear']];
+        ['theme [couleur]', 'h.theme'], ['cd <page>', 'h.cd'], ['clear', 'h.clear']];
       print(rows.map(([c, d]) => `  ${cmdLink(c.startsWith('cat') ? 'cat about.md' : c.split(' ')[0], c)}${' '.repeat(Math.max(2, 18 - c.length))}<span class="dim">${esc(t(d))}</span>`).join('\n'));
       say('  ' + t('term.keys'), 'dim');
     } },
@@ -159,7 +159,7 @@ function PageTerminal() {
       }
       print(LANGS.map((x) => `  ${cmdLink('lang ' + x, ('lang ' + x).padEnd(9))} <span class="dim" lang="${x}">${esc(LANG_NAMES[x])}${x === LANG ? ' ' + esc(t('term.current')) : ''}</span>`).join('\n'));
     } },
-    visuel: { run() { page.timers.push(setTimeout(() => go('#forge'), 200)); } },
+    visuel: { hidden: true, run() { page.timers.push(setTimeout(() => go('#forge'), 200)); } },
     claude: { run() {
       print(`<span class="acc">claude</span> <span class="dim">${esc(t('claude.who'))}</span>`);
       para(t('claude.p1'));
@@ -180,14 +180,12 @@ function PageTerminal() {
   const names = () => Object.keys(CMDS).filter((k) => !CMDS[k].hidden && k !== 'kaliso');
 
   /* --- KALISO ------------------------------------------------------------------ */
+  // forge [description] : ouvre la forge (interface graphique) ; la description éventuelle y est envoyée à KALISO
   function startForge(arg) {
     const text = (arg || '').trim().replace(/^["«“]|["»”]$/g, '');
-    if (text) return runForge(text);
-    mode = { kind: 'forge' };
-    print(`<span class="acc">KALISO</span> <span class="dim">— ${esc(t('h.forge'))}</span>`);
-    para(t('fg.ask'));
-    say(t('fg.privacy'), 'dim');
-    setPS('forge ›');
+    try { if (text) sessionStorage.setItem('kaliso-forge-start', text); } catch (e) {}
+    say(t('fg.open'), 'acc');
+    page.timers.push(setTimeout(() => go('#forge'), 350));
   }
   async function runForge(text) {
     if (text.length < 12) { say(t('fg.short'), 'err'); mode = { kind: 'forge' }; setPS('forge ›'); return; }

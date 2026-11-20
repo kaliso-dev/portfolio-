@@ -10,6 +10,7 @@ OUT.mkdir(exist_ok=True)
 
 FONT_CSS = """
 @font-face{font-family:'Google Sans Flex';font-weight:1 1000;src:url(https://fonts.gstatic.com/lv/google-sans-flex/google-sans-flex-latin-wght-normal.woff2)}
+@font-face{font-family:'Fraunces';font-weight:100 900;src:url(https://fonts.gstatic.com/lv/fraunces/fraunces-latin-full-normal.woff2)}
 @font-face{font-family:'Google Sans Flex';font-weight:1 1000;src:url(https://fonts.gstatic.com/lv/google-sans-flex/google-sans-flex-latin-ext-wght-normal.woff2);unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 @font-face{font-family:'Geist Mono';font-weight:300;src:url(https://fonts.gstatic.com/l/geist-mono/geist-mono-latin-300-normal.woff2)}
 @font-face{font-family:'Geist Mono';font-weight:400;src:url(https://fonts.gstatic.com/l/geist-mono/geist-mono-latin-400-normal.woff2)}
@@ -48,7 +49,7 @@ async def route(r):
                 await asyncio.sleep(m.get("_delay", PLAN["mockDelay"]) / 1000)
             if "_sse" in m:  # flux SSE simulé (texte découpé en morceaux)
                 txt = m["_sse"]; parts = [txt[i:i + 6] for i in range(0, len(txt), 6)]
-                body = "".join("data: " + json.dumps({"t": x}) + "\n\n" for x in parts) + "data: " + json.dumps({"done": True, "chips": m.get("chips", [])}) + "\n\n"
+                body = "".join("data: " + json.dumps(e) + "\n\n" for e in m.get("_pre", [])) + "".join("data: " + json.dumps({"t": x}) + "\n\n" for x in parts) + "data: " + json.dumps({"done": True, "chips": m.get("chips", [])}) + "\n\n"
                 return await r.fulfill(status=200, body=body, headers={"content-type": "text/event-stream", "x-model": "Mistral Small 3.1"})
             return await r.fulfill(status=m.get("_status", 200), body=json.dumps({k: v for k, v in m.items() if not k.startswith("_")}), headers={"content-type": "application/json"})
         if PLAN.get("api") == "proxy":

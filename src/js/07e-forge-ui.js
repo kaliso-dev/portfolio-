@@ -162,10 +162,21 @@ function PageForge() {
     thread.appendChild(m);
     return m;
   }
-  function addKal(text) {
-    const m = h(`<div class="fx-msg is-kal">${who()}<div class="fx-md">${text == null ? thinking() : mdLite(text)}</div></div>`);
+  function addKal(text, src) {
+    const m = h(`<div class="fx-msg is-kal">${who()}<div class="fx-src"></div><div class="fx-md">${text == null ? thinking() : mdLite(text)}</div></div>`);
     thread.appendChild(m);
-    return { el: m, md: $('.fx-md', m) };
+    const k = { el: m, md: $('.fx-md', m), src: $('.fx-src', m) };
+    (src || []).forEach((w) => addSource(k, w));
+    return k;
+  }
+  // « KALISO a lu ce site » / « KALISO a cherché sur le web »
+  function addSource(k, w) {
+    const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } };
+    const link = (u, txt) => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer nofollow">${esc(txt)}</a>`;
+    const line = w.kind === 'search'
+      ? `${esc(t('cv.searched', { q: w.label }))}${(w.links || []).length ? ' · ' + w.links.slice(0, 3).map((u) => link(u, host(u))).join(' · ') : ''}`
+      : `${esc(t('cv.read'))} ${w.url ? link(w.url, w.label) : esc(w.label)}`;
+    k.src.insertAdjacentHTML('beforeend', `<p>${line}</p>`);
   }
   function addNote(html) {
     const m = h(`<div class="fx-msg is-kal is-note">${who()}<div class="fx-md">${html}</div></div>`);
@@ -175,7 +186,7 @@ function PageForge() {
   }
   function renderThread() {
     thread.innerHTML = '';
-    conv.messages.forEach((m) => (m.role === 'user' ? addUser(m.content) : addKal(m.content)));
+    conv.messages.forEach((m) => (m.role === 'user' ? addUser(m.content) : addKal(m.content, m.src)));
   }
   // idées de départ, puis les réponses rapides proposées par KALISO
   function renderIdeas() {
@@ -218,19 +229,30 @@ function PageForge() {
     fadeIn(u);
     const k = addKal(null);
     fadeIn(k.el, 0.1);
+    const turnWeb = [];
     scrollTo(u, -150, 0.9);
     spin(2.6);
     abort = new AbortController();
     let r, partial = '';
     try {
-      r = await API.chat(conv.messages, (full) => { partial = full; k.md.innerHTML = mdLite(full) + '<span class="fx-caret" aria-hidden="true"></span>'; follow(k.el); }, abort.signal);
+      r = await API.chat(conv.messages.map(({ role, content }) => ({ role, content })), (full) => { partial = full; k.md.innerHTML = mdLite(full) + '<span class="fx-caret" aria-hidden="true"></span>'; follow(k.el); }, abort.signal, {
+        web: (conv.web || []).map(({ kind, label, text }) => ({ kind, label, text })),
+        onStatus: (st) => {
+          const key = st.kind === 'search' ? 'cv.searching' : st.kind === 'site-fail' ? 'cv.readFail' : 'cv.reading';
+          if (st.kind === 'site-fail') k.src.insertAdjacentHTML('beforeend', `<p class="is-fail">${esc(t(key, { x: st.label }))}</p>`);
+          else k.md.innerHTML = `<p class="fx-shimmer">${esc(t(key, { x: st.label }))}<span class="fx-dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></p>`;
+        },
+        onWeb: (w) => { turnWeb.push(w); addSource(k, w); k.md.innerHTML = thinking(); },
+      });
     } catch (e) { r = { ok: false, reason: e && e.aborted ? 'stop' : 'offline' }; }
     abort = null;
     spin(0.45, 1.6);
     if (r && r.ok) {
       k.md.innerHTML = mdLite(r.text);
-      conv.messages.push({ role: 'assistant', content: r.text });
+      conv.messages.push({ role: 'assistant', content: r.text, src: turnWeb.map(({ kind, label, url, links }) => ({ kind, label, url, links })) });
       conv.chips = r.chips || [];
+      // les sources lues restent dans la conversation (renvoyées à KALISO à chaque message)
+      if (turnWeb.length) conv.web = [...(conv.web || []).filter((w) => !turnWeb.some((x) => x.label === w.label)), ...turnWeb].slice(-4);
     } else if (r && r.reason === 'stop' && partial.trim()) {
       k.md.innerHTML = mdLite(partial);
       conv.messages.push({ role: 'assistant', content: partial.trim() });
@@ -403,7 +425,7 @@ function PageForge() {
     const L = loader();
     const t0 = performance.now();
     let r;
-    try { r = await API.plan(conv.messages); } catch (e) { r = { ok: false, cold: true, reason: 'offline' }; }
+    try { r = await API.plan(conv.messages.map(({ role, content }) => ({ role, content })), (conv.web || []).map(({ kind, label, text }) => ({ kind, label, text }))); } catch (e) { r = { ok: false, cold: true, reason: 'offline' }; }
     await new Promise((ok) => page.timers.push(setTimeout(ok, Math.max(0, 1400 - (performance.now() - t0)))));
     await L.finish();
     spin(0.45, 1.6);
@@ -635,6 +657,9 @@ function PageForge() {
       conv = { messages: [{ role: 'user', content: d.text || d.plan.title }], chips: [], plan: { plan: d.plan, id: d.id, estimate: d.estimate, model: d.model, ms: d.ms }, planAt: 1, view: 'report' };
       save();
     }
+    // arrivée depuis la commande « forge … » du terminal
+    try { page.start = sessionStorage.getItem('kaliso-forge-start'); sessionStorage.removeItem('kaliso-forge-start'); } catch (e) {}
+    if (page.start && conv.view === 'report') { conv.view = 'chat'; save(); }
     renderThread(); syncMode(); renderIdeas(); grow();
     if (conv.view === 'report' && conv.plan) { showView('report'); renderReport(conv.plan, false); }
     quests();
@@ -644,6 +669,11 @@ function PageForge() {
     page.knight.start(delay + 0.1, 2.2);
     gsap.to($$('.fx-hero .fx-col > *:not(.fx-knight), .fx-chat .fx-col > *', el), { opacity: 1, y: 0, duration: 1, ease: 'power4.out', stagger: 0.05, delay: delay + 0.35, clearProps: 'opacity,transform' });
     revealFooter(el, delay + 0.8);
+    if (page.start) {
+      const txt = page.start;
+      if (conv.messages.length) { input.value = txt; grow(); }
+      else page.timers.push(setTimeout(() => say(txt), (delay + 1.2) * 1000));
+    }
     if (!IS_TOUCH && conv.view !== 'report') page.timers.push(setTimeout(() => input.focus({ preventScroll: true }), (delay + 1.1) * 1000));
   };
   page.destroy = () => {

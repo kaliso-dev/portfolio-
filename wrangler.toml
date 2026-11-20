@@ -36,6 +36,10 @@ CHAT_PER_HOUR = "40"      # messages par visiteur
 CHAT_PER_DAY = "150"      # messages par visiteur
 CHAT_MAX_TURNS = "14"     # messages du visiteur par conversation, ensuite : compte rendu
 AI_NEURONS_DAY = "9000"   # budget de calcul du jour, conversations + plans (l'offre gratuite en donne 10 000)
+# KALISO sur le web : lecture des sites cités (gratuit) et recherche par nom (secret TAVILY_API_KEY, facultatif)
+WEB_PER_HOUR = "10"       # sites lus par visiteur et par heure
+SEARCH_PER_DAY = "30"     # recherches web par jour, tous visiteurs (offre gratuite Tavily : 1 000 / mois)
+SEARCH_PER_VISITOR = "6"  # recherches web par visiteur et par jour
 # si le site reste sur Netlify (ou ailleurs), mets son adresse ici, séparée par des virgules
 ALLOWED_ORIGINS = ""
 
@@ -45,4 +49,5 @@ crons = ["17 3 * * *"]
 
 # secrets (jamais dans ce fichier) :
 #   npx wrangler secret put ADMIN_TOKEN   → le mot de passe de ton dashboard
+#   npx wrangler secret put TAVILY_API_KEY → optionnel : recherche web de KALISO (app.tavily.com, gratuit)
 #   npx wrangler secret put NOTIFY_URL    → optionnel : notification à chaque ticket (ntfy.sh ou webhook Discord)

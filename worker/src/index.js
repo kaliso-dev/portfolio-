@@ -9,7 +9,8 @@
    Le reste : fichiers du site (dist/)
    ========================================================================== */
 import ADMIN_HTML from './admin.html';
-import { forgePlan, modelLabel, chatStream, chatTransform, neuronsOf } from './kaliso.js';
+import { forgePlan, modelLabel, chatStream, chatTransform, neuronsOf, visitorLang, routeSearch } from './kaliso.js';
+import { findUrl, readSite, webSearch, readWeb } from './web.js';
 import { estimer, TARIFS } from './tarifs.js';
 import { LANGS, TYPES, BUDGETS, DELAIS, STATUTS } from './constantes.js';
 
@@ -126,18 +127,24 @@ const aiLeft = async (env) => num(env.AI_NEURONS_DAY, 9000) - (await aiSpent(env
 // conversation envoyée par le navigateur : rôles et longueurs vérifiés
 function readConversation(list) {
   if (!Array.isArray(list)) return null;
-  const msgs = list.slice(-24).map((m) => ({
-    role: m && m.role === 'assistant' ? 'assistant' : 'user',
-    content: clean(m && m.content, m && m.role === 'assistant' ? 2400 : 1500),
-  })).filter((m) => m.content);
+  const msgs = [];
+  for (const m of list.slice(-24)) {
+    const role = m && m.role === 'assistant' ? 'assistant' : 'user';
+    const content = clean(m && m.content, role === 'assistant' ? 2400 : 1500);
+    if (!content) continue;
+    // les modèles exigent l'alternance visiteur / KALISO : deux messages de suite du même côté sont fusionnés
+    const prev = msgs[msgs.length - 1];
+    if (prev && prev.role === role) prev.content += '\n\n' + content; else msgs.push({ role, content });
+  }
+  while (msgs.length && msgs[0].role !== 'user') msgs.shift();
   if (!msgs.length || msgs[msgs.length - 1].role !== 'user') return null;
   return msgs;
 }
 const transcript = (msgs, lang) => msgs.map((m) => `${m.role === 'user' ? (lang === 'en' ? 'Visitor' : 'Visiteur') : 'KALISO'}: ${m.content}`).join('\n\n');
 
 async function postChat(request, env, ctx) {
-  const b = await readJson(request, 48000);
-  const lang = LANGS.includes(b.lang) ? b.lang : 'fr';
+  const b = await readJson(request, 64000);
+  const site = LANGS.includes(b.lang) ? b.lang : 'fr';
   const msgs = readConversation(b.messages);
   if (!msgs) return fail(400, 'conversation invalide');
   const turns = b.messages.filter((m) => m && m.role !== 'assistant').length;
@@ -148,21 +155,67 @@ async function postChat(request, env, ctx) {
     if (!r.ok) return fail(429, 'trop de messages', { cold: true, reason: 'rate', retry: r.retry });
   }
   if ((await aiLeft(env)) <= 0) return fail(503, 'quota du jour atteint', { cold: true, reason: 'quota' });
-  let s;
-  try { s = await chatStream(env, msgs, lang); } catch (e) { return fail(503, 'la forge refroidit', { cold: true, reason: 'ai' }); }
-  // le coût est compté quand le flux se termine
+  if (!env.AI) return fail(503, 'la forge refroidit', { cold: true, reason: 'ai' });
+  // KALISO répond dans la langue du visiteur, pas forcément celle du site
+  const lang = visitorLang(msgs, site);
+  const web = readWeb(b.web);
+  const last = msgs[msgs.length - 1].content;
+  const url = findUrl(last);
+  const canSearch = !url && env.TAVILY_API_KEY && web.filter((w) => w.kind === 'search').length < 3;
+
+  const enc = new TextEncoder();
+  const sse = (o) => enc.encode(`data: ${JSON.stringify(o)}\n\n`);
   let end; const ended = new Promise((r) => { end = r; });
-  ctx.waitUntil(ended.then(([raw, usage]) => aiSpend(env, neuronsOf(s.model, s.msgs, raw, usage))).catch(() => {}));
-  const body = s.stream.pipeThrough(chatTransform((raw, usage) => end([raw, usage])));
-  return new Response(body, { headers: { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-store', 'x-model': modelLabel(s.model), 'x-content-type-options': 'nosniff' } });
+  let extra = 0;
+  ctx.waitUntil(ended.then((x) => x && aiSpend(env, neuronsOf(x.model, x.msgs, x.raw, x.usage) + extra)).catch(() => {}));
+  const body = new ReadableStream({
+    async start(ctrl) {
+      try {
+        const fresh = [];
+        // 1) un site cité : KALISO va le lire
+        if (url && web.length < 4) {
+          const ok = (await hitAll(env, [[`web:h:${v}`, num(env.WEB_PER_HOUR, 10), 3600]]))[0].ok;
+          if (ok) {
+            ctrl.enqueue(sse({ status: { kind: 'site', label: new URL(url).hostname.replace(/^www\./, '') } }));
+            const s = await readSite(url);
+            if (s) { fresh.push(s); ctrl.enqueue(sse({ web: s })); } else ctrl.enqueue(sse({ status: { kind: 'site-fail', label: new URL(url).hostname.replace(/^www\./, '') } }));
+          }
+        // 2) un nom d'entreprise : recherche web (si une clé Tavily est configurée)
+        } else if (canSearch) {
+          const q = await routeSearch(env, msgs);
+          extra += 3;
+          if (q) {
+            const [a, g] = await hitAll(env, [[`search:d:${v}`, num(env.SEARCH_PER_VISITOR, 6), 86400], ['search:global', num(env.SEARCH_PER_DAY, 30), 86400]]);
+            if (a.ok && g.ok) {
+              ctrl.enqueue(sse({ status: { kind: 'search', label: q } }));
+              const s = await webSearch(env, q);
+              if (s) { fresh.push(s); ctrl.enqueue(sse({ web: s })); }
+            }
+          }
+        }
+        const s = await chatStream(env, msgs, lang, [...web, ...fresh].slice(-4));
+        const rd = s.stream.pipeThrough(chatTransform((raw, usage) => end({ model: s.model, msgs: s.msgs, raw, usage }), modelLabel(s.model))).getReader();
+        for (;;) { const { value, done } = await rd.read(); if (done) break; ctrl.enqueue(value); }
+      } catch (e) {
+        console.error(e);
+        ctrl.enqueue(sse({ error: 'la forge refroidit' }));
+        end(null);
+      }
+      ctrl.close();
+    },
+  });
+  return new Response(body, { headers: { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'x-lang': lang } });
 }
 
 async function postForge(request, env, ctx) {
-  const b = await readJson(request, 48000);
-  const lang = LANGS.includes(b.lang) ? b.lang : 'fr';
-  const msgs = b.messages ? readConversation([...(Array.isArray(b.messages) ? b.messages : []), { role: 'user', content: '.' }]) : null;
-  const fromChat = !!(msgs && msgs.length > 1);
-  const text = fromChat ? clean(transcript(msgs.slice(0, -1), lang), 20000) : clean(b.text, 1500);
+  const b = await readJson(request, 64000);
+  const site = LANGS.includes(b.lang) ? b.lang : 'fr';
+  const conv = Array.isArray(b.messages) ? readConversation(b.messages.concat(b.messages.length && b.messages[b.messages.length - 1].role === 'assistant' ? [{ role: 'user', content: '.' }] : [])) : null;
+  const fromChat = !!(conv && conv.length > 1);
+  const lang = fromChat ? visitorLang(conv, site) : site;
+  const web = readWeb(b.web);
+  const webTxt = web.length ? '\n\n' + web.map((w) => `[web — ${w.label}]\n${w.text}`).join('\n\n') : '';
+  const text = fromChat ? clean(transcript(conv.filter((m) => m.content !== '.'), lang) + webTxt, 24000) : clean(b.text, 1500);
   if (text.length < 12) return fail(400, 'description trop courte', { field: 'text' });
   const v = await visitor(request, env);
   // compteurs du visiteur en un aller-retour ; le compteur global seulement s'il passe (un abuseur ne vide pas le quota)

@@ -3,6 +3,7 @@
 #   CLOUDFLARE_API_TOKEN   jeton Cloudflare (modèle « Edit Cloudflare Workers » + D1 : Edit)
 #   CLOUDFLARE_ACCOUNT_ID  identifiant du compte Cloudflare
 #   ADMIN_TOKEN            mot de passe du dashboard /admin (au moins 12 caractères)
+#   TAVILY_API_KEY         facultatif : clé gratuite Tavily (app.tavily.com) pour que KALISO cherche sur le web
 # Variable facultative (onglet Variables) : SITE_URL, l'adresse finale du site (image d'aperçu).
 name: Déployer sur Cloudflare
 
@@ -23,6 +24,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+      TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
       CF_API: https://api.cloudflare.com/client/v4
       D1_NAME: kaliso-eu   # base de données, placée en Europe de l'Ouest (au plus près des visiteurs)
       D1_REGION: weur
@@ -120,6 +122,10 @@ jobs:
         if: steps.check.outputs.ok == 'true' && env.ADMIN_TOKEN != ''
         run: printf '%s' "$ADMIN_TOKEN" | npx wrangler secret put ADMIN_TOKEN
 
+      - name: Recherche web de KALISO (facultatif)
+        if: steps.check.outputs.ok == 'true' && env.TAVILY_API_KEY != ''
+        run: printf '%s' "$TAVILY_API_KEY" | npx wrangler secret put TAVILY_API_KEY
+
       - name: Résumé
         if: steps.check.outputs.ok == 'true'
         run: |
@@ -130,6 +136,7 @@ jobs:
             echo "- Site : $URL"
             echo "- Dashboard : $URL/admin"
             if [ -z "$ADMIN_TOKEN" ]; then echo "- ⚠ Secret ADMIN_TOKEN absent : le dashboard restera fermé."; fi
+            if [ -z "$TAVILY_API_KEY" ]; then echo "- KALISO lit les sites qu'on lui donne ; pour qu'il cherche aussi un nom d'entreprise sur le web, ajoute le secret TAVILY_API_KEY."; else echo "- Recherche web de KALISO : activée (Tavily)."; fi
           } >> "$GITHUB_STEP_SUMMARY"
           echo "site : $URL"
 
@@ -154,3 +161,12 @@ jobs:
           grep -q "^data:" chat.sse || head -c 400 chat.sse; echo
           python3 -c "import json; ev=[json.loads(l[5:]) for l in open('chat.sse',encoding='utf-8') if l.startswith('data:')]; print('morceaux :', sum(1 for e in ev if 't' in e)); print(''.join(e.get('t','') for e in ev)); print('suggestions :', [e.get('chips') for e in ev if e.get('done')]); print([e for e in ev if 'error' in e or 'ok' in e])"
           echo "--- police Google Sans Flex : $(curl -sS -o /dev/null -w '%{http_code}' 'https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@300..600&display=swap')"
+          echo "--- police Fraunces : $(curl -sS -o /dev/null -w '%{http_code}' 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..600&display=swap')"
+          echo "--- KALISO lit un site (langue : français) :"
+          curl -sS -N -X POST "$URL/api/chat" -H "content-type: application/json" \
+            --data '{"lang":"fr","messages":[{"role":"user","content":"Test de déploiement : voici le site de mon entreprise, example.com, je voudrais le refaire"}]}' > chat2.sse || true
+          python3 -c "import json; ev=[json.loads(l[5:]) for l in open('chat2.sse',encoding='utf-8') if l.startswith('data:')]; print([e for e in ev if 'status' in e or 'web' in e]); print(''.join(e.get('t','') for e in ev)[:500])"
+          echo "--- KALISO garde le français (même après une réponse en anglais) :"
+          curl -sS -N -X POST "$URL/api/chat" -H "content-type: application/json" \
+            --data '{"lang":"fr","messages":[{"role":"user","content":"Test de déploiement : je veux une application de réservation pour mon salon de coiffure à Rabat"},{"role":"assistant","content":"Great! How many staff members work at your salon, and do you take deposits?"},{"role":"user","content":"3"}]}' > chat3.sse || true
+          python3 -c "import json; ev=[json.loads(l[5:]) for l in open('chat3.sse',encoding='utf-8') if l.startswith('data:')]; print(''.join(e.get('t','') for e in ev)[:400])"

@@ -48,6 +48,17 @@ clique **New repository secret** trois fois :
 Onglet **Actions** du dépôt → « Déployer sur Cloudflare » → **Run workflow**. Deux à trois minutes plus tard,
 le résumé affiche l'adresse du site et du dashboard. Ensuite, chaque push redéploie tout seul.
 
+**Facultatif : KALISO cherche sur le web**
+
+KALISO lit déjà tout seul un site quand le visiteur en donne l'adresse (`monatelier.fr`).
+Pour qu'il puisse aussi chercher un **nom d'entreprise** sur le web :
+
+1. Crée un compte gratuit sur [app.tavily.com](https://app.tavily.com) (1 000 recherches par mois, sans carte bancaire) et copie ta clé API.
+2. Dans GitHub → Settings → Secrets and variables → Actions, ajoute le secret `TAVILY_API_KEY` avec cette clé.
+3. Relance « Déployer sur Cloudflare » (Run workflow). Le résumé indique « Recherche web de KALISO : activée ».
+
+Garde-fous (dans `wrangler.toml`) : 30 recherches par jour au total, 6 par visiteur.
+
 Le reste de ce guide décrit la même chose à la main, depuis ton ordinateur.
 
 ---

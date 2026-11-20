@@ -21,15 +21,16 @@ const API = {
   },
   forge(text) { return this.req('/api/forge', { method: 'POST', body: JSON.stringify({ text, lang: LANG }) }, 50000); },
   // plan à partir de toute la conversation
-  plan(messages) { return this.req('/api/forge', { method: 'POST', body: JSON.stringify({ messages, lang: LANG }) }, 60000); },
+  plan(messages, web) { return this.req('/api/forge', { method: 'POST', body: JSON.stringify({ messages, web, lang: LANG }) }, 60000); },
   // conversation : la réponse de KALISO arrive en flux (SSE) ; onText reçoit chaque morceau
-  async chat(messages, onText, signal) {
+  // opts : { web (sources déjà lues), onStatus (KALISO lit / cherche), onWeb (nouvelle source) }
+  async chat(messages, onText, signal, opts = {}) {
     const ctl = new AbortController();
     const stop = () => ctl.abort();
     if (signal) signal.addEventListener('abort', stop);
     let tm = setTimeout(stop, 30000);
     try {
-      const r = await fetch(this.url('/api/chat'), { method: 'POST', signal: ctl.signal, headers: { accept: 'text/event-stream', 'content-type': 'application/json' }, body: JSON.stringify({ messages, lang: LANG }) });
+      const r = await fetch(this.url('/api/chat'), { method: 'POST', signal: ctl.signal, headers: { accept: 'text/event-stream', 'content-type': 'application/json' }, body: JSON.stringify({ messages, web: opts.web || [], lang: LANG }) });
       const ct = r.headers.get('content-type') || '';
       if (!ct.includes('event-stream')) {
         let data = null;
@@ -38,7 +39,7 @@ const API = {
         return { status: r.status, ...data };
       }
       const rd = r.body.getReader(), dec = new TextDecoder();
-      let buf = '', text = '', chips = [];
+      let buf = '', text = '', chips = [], model = '';
       for (;;) {
         const { value, done } = await rd.read();
         if (done) break;
@@ -52,12 +53,14 @@ const API = {
           let j = null;
           try { j = JSON.parse(line.slice(5)); } catch (e) { continue; }
           if (j.t) { text += j.t; onText && onText(text, j.t); }
-          if (j.done) chips = j.chips || [];
+          if (j.status && opts.onStatus) opts.onStatus(j.status);
+          if (j.web && opts.onWeb) opts.onWeb(j.web);
+          if (j.done) { chips = j.chips || []; model = j.model || ''; }
           if (j.error) throw Object.assign(new Error(j.error), { offline: true });
         }
       }
       if (!text.trim()) throw Object.assign(new Error('vide'), { offline: true });
-      return { ok: true, text: text.trim(), chips, model: r.headers.get('x-model') || '' };
+      return { ok: true, text: text.trim(), chips, model };
     } catch (e) {
       if (e && e.offline) throw e;
       throw Object.assign(new Error('offline'), { offline: true, aborted: e && e.name === 'AbortError' });
