@@ -61,5 +61,7 @@ const SITE = {
   },
   // les projets vivent dans src/projets/*.md (une fiche par projet, en FR / EN / AR) :
   // build.py les lit et les injecte ici. Gabarit pour le Claude de chaque projet : docs/gabarit-etude-de-cas.md
+  // illustrations des diapos du compte rendu (remplies par build.py depuis src/assets/forge/)
+  forgeArt: /*__FORGE_ART__*/{},
   projects: /*__PROJETS__*/[],
 };

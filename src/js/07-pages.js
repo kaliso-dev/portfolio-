@@ -83,13 +83,6 @@ function PageIndex() {
     prepCopy(el);
     page.unlamp = bindLamp(el);
     gsap.set($('.forge-lamp', el), { opacity: 0, y: 12 });
-    // secret : sept coups sur le chevalier
-    let hits = 0, last = 0;
-    $('.model', el).addEventListener('pointerdown', () => {
-      const n = performance.now();
-      hits = n - last < 900 ? hits + 1 : 1; last = n;
-      if (hits >= 7) { hits = 0; Seals.find('knight'); if (page.knight && !REDUCED) gsap.fromTo(page.knight, { extraRot: 0 }, { extraRot: Math.PI * 4, duration: 1.6, ease: 'power3.inOut', onComplete: () => { page.knight.extraRot = 0; } }); }
-    });
     page.chars = $$('.ch', el);
     page.dots = $$('.home-dot', el);
     gsap.set(page.chars, { yPercent: 110 });
@@ -251,21 +244,29 @@ function PageProject(i) {
 
 /* --- À PROPOS ------------------------------------------------------------ */
 function buildArch(arch) {
-  const probe = document.createElement('span');
-  probe.textContent = 'M'.repeat(40);
-  probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre';
-  arch.appendChild(probe);
-  const cw = probe.getBoundingClientRect().width / 40;
-  probe.remove();
-  const lh = parseFloat(getComputedStyle(arch).lineHeight) || cw * 2.25;
-  const ratio = lh / cw;
+  // l'arche est mesurée en pixels : chaque segment de texte est ajusté à sa largeur exacte,
+  // quelle que soit la police (proportionnelle)
+  const cs = getComputedStyle(arch);
+  const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.35;
+  const ctx = document.createElement('canvas').getContext('2d');
+  ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  const ls = parseFloat(cs.letterSpacing) || 0;
+  const text = SITE.about.ring.toUpperCase();
+  const nameU = SITE.name.toUpperCase();
+  const avg = (ctx.measureText(text).width + ls * text.length) / text.length;
   // arc outrepassé : cercle prolongé sous son centre, puis piédroits verticaux
   const Ro = clamp(Math.floor((innerHeight * 0.74) / lh / 2.55), 9, 19);
   const Ri = Ro * 0.64, sp = Ro * 0.38, J = Ro * 1.12;
-  const text = SITE.about.ring.toUpperCase();
-  const nameU = SITE.name.toUpperCase();
   let k = 0;
-  const take = (n) => { let out = ''; for (let i = 0; i < n; i++) { out += text[k % text.length]; k++; } return out; };
+  const seg = (w) => {
+    const n = Math.max(1, Math.round(w / avg));
+    let out = '';
+    for (let i = 0; i < n; i++) { out += text[k % text.length]; k++; }
+    const real = ctx.measureText(out).width + ls * out.length;
+    const extra = (w - real) / out.length;
+    const html = esc(out).split(esc(nameU)).join(`<b class="hl" style="font-weight:inherit">${esc(nameU)}</b>`);
+    return `<i style="width:${w.toFixed(1)}px;letter-spacing:${(ls + extra).toFixed(3)}px">${html}</i>`;
+  };
   const rows = [];
   let doorTop = null;
   const jo = Math.sqrt(Ro * Ro - sp * sp), ji = Math.sqrt(Ri * Ri - sp * sp);
@@ -274,16 +275,16 @@ function buildArch(arch) {
     let ow, iw;
     if (y < sp) { ow = Math.sqrt(Math.max(0, Ro * Ro - y * y)); iw = Math.abs(y) < Ri ? Math.sqrt(Ri * Ri - y * y) : 0; }
     else { ow = jo; iw = ji; }
-    const oc = Math.round(ow * ratio), ic = Math.round(iw * ratio);
-    if (oc < 1) continue;
-    if (ic === 0) rows.push(take(oc * 2));
-    else { if (doorTop === null) doorTop = rows.length; const seg = Math.max(1, oc - ic); rows.push(take(seg) + ' '.repeat(ic * 2) + take(seg)); }
+    const O = ow * lh, I = iw * lh;
+    if (O < avg) continue;
+    if (I < avg) rows.push(seg(O * 2));
+    else { if (doorTop === null) doorTop = rows.length; rows.push(seg(Math.max(avg, O - I)) + `<i style="width:${(I * 2).toFixed(1)}px"></i>` + seg(Math.max(avg, O - I))); }
   }
-  const sill = Math.round(jo * ratio) + 3;
-  rows.push('='.repeat(sill * 2));
-  arch.innerHTML = rows.map((l) => `<span><span>${esc(l).split(esc(nameU)).join(`<b class="hl" style="font-weight:inherit">${esc(nameU)}</b>`)}</span></span>`).join('');
+  const sillW = (jo * lh + avg * 3) * 2;
+  rows.push(`<i class="sill" style="width:${sillW.toFixed(1)}px"></i>`);
+  arch.innerHTML = rows.map((l) => `<span><span>${l}</span></span>`).join('');
   const springRow = rows.length - 1 - Math.ceil(J) - 1;
-  return { lh, cw, rows: rows.length, doorTop, springRow, doorW: Math.round(ji * ratio) * 2 * cw };
+  return { lh, rows: rows.length, doorTop, springRow, doorW: ji * lh * 2 };
 }
 
 function PageAbout() {
@@ -443,7 +444,6 @@ function PageNotFound() {
     revealCopy($('.not-found-copy', el), delay + 0.375);
     revealCopy($('.not-found-links', el), delay + 0.45);
     revealFooter(el, delay + 0.6);
-    page.timers.push(setTimeout(() => Seals.find('desert'), (delay + 2.2) * 1000));
   };
   page.timers = [];
   page.destroy = () => page.timers.forEach(clearTimeout);

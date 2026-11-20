@@ -6,12 +6,13 @@ Portfolio « KNIGHT.OS » : la mécanique de [zenobasi.com](https://zenobasi.com
 - **Accueil** : chevalier SDF en temps réel converti en glyphes, mot géant KALISO, fond de soie animé par une vraie simulation de fluide.
 - **Transitions** : une lame tranche la page, avec le son d'épée.
 - **Pages** : projets (carrousel WebGL) avec études de cas, à propos (arche en texte), contact, et la **forge** (KALISO en mode visuel). Le **terminal** reste accessible depuis la forge (lien discret, `#terminal`).
-- **KALISO** (page Forge, ou commande `forge` du terminal) : le visiteur décrit sa quête dans une barre en verre liquide, un modèle open source (Workers AI) en tire un plan de bataille ; la fourchette de prix vient de ta grille, jamais du modèle. Le plan devient un ticket en un mot.
+- **KALISO** (page Forge) : le visiteur discute avec KALISO, un modèle open source (Workers AI) : il pose ses questions, propose plusieurs façons de construire le projet et affine ; ses réponses arrivent mot à mot. Quand le visiteur a fini, « Voir le compte rendu » produit le plan (carrousel + vue d'ensemble), qu'il envoie à Sofiene en ticket. La fourchette de prix vient de ta grille, jamais du modèle (les prix et durées sont filtrés dans la conversation). La commande `forge` du terminal fait un plan en une fois.
+- **Illustrations du compte rendu** : dépose `plan.webp`, `features.webp`, `stack.webp`, `steps.webp`, `range.webp`, `questions.webp` dans `src/assets/forge/` (voir le LISEZ-MOI du dossier) ; sans image, la tuile affiche un grand numéro.
+- **Police** : Google Sans Flex pour les textes ; Geist Mono reste pour le terminal et le code.
 - **Tickets** : envoyés à ton API, rangés dans ton **dashboard privé** (`/admin`), suivis par le visiteur avec `status`.
 - **Forge allumée** : ta disponibilité sur l'accueil, réglée d'un clic dans le dashboard.
 - **Verre liquide** (façon iOS 26) : les éléments `.lg` sont transparents ; leur verre (réfraction, reflet, flou) est dessiné dans le fond WebGL. Adapté de [archisvaze/liquid-glass](https://github.com/archisvaze/liquid-glass) (MIT). Repli en verre givré CSS si WebGL2 manque ou si le visiteur demande moins de transparence.
 - **Deux langues** : français et anglais, sélecteur dans le menu ou `lang` dans le terminal.
-- **Sept sceaux** cachés dans le site (solutions : `docs/secrets.md`, attention divulgâcheur).
 
 Le site tient dans un seul fichier HTML généré, sans framework : GSAP, Lenis et three.js sont chargés depuis jsDelivr, les polices depuis Google Fonts. L'API est un Worker Cloudflare (`worker/`).
 
@@ -38,9 +39,8 @@ src/
     06-slider.js    carrousel WebGL
     07-pages.js     pages
     07b-forge.js    écran de chargement (épée forgée)
-    07c-terminal.js page terminal : KALISO, tickets, suivi, duel
+    07c-terminal.js page terminal : KALISO, tickets, suivi
     07e-forge-ui.js page forge : barre de chat, chargement, plan en carrousel + grille, ticket, mes quêtes
-    07d-secrets.js  les sept sceaux
     08-app.js       routeur, menu, langues, préchargement, démarrage
   assets/           musique d'ambiance, image d'aperçu (og.png)
 worker/             API Cloudflare : KALISO, tickets, dashboard (/admin), forge allumée
@@ -48,7 +48,7 @@ worker/             API Cloudflare : KALISO, tickets, dashboard (/admin), forge 
   migrations/       tables de la base D1
 wrangler.toml       configuration Cloudflare (site + API)
 build.py            assemble dist/ (lit aussi src/projets/*.md)
-docs/               gabarit des études de cas, solutions des secrets
+docs/               gabarit des études de cas
 netlify.toml        configuration Netlify (variante)
 test/               banc de test (Playwright) : captures et scénarios
 ```

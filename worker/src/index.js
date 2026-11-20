@@ -1,14 +1,15 @@
 /* ==========================================================================
    KALISO — Worker Cloudflare du portfolio de Sofiene Lamsouni
    Public  : GET  /api/status            état de la forge (allumée / éteinte)
-             POST /api/forge             KALISO : description → plan de bataille + fourchette
+             POST /api/chat              KALISO en conversation (réponse en flux SSE)
+             POST /api/forge             KALISO : description ou conversation → plan de bataille + fourchette
              POST /api/tickets           nouveau ticket
              GET  /api/tickets/:id?key=  suivi d'un ticket par le visiteur
    Privé   : /admin (dashboard) et /api/admin/* (jeton ADMIN_TOKEN)
    Le reste : fichiers du site (dist/)
    ========================================================================== */
 import ADMIN_HTML from './admin.html';
-import { forgePlan, modelLabel } from './kaliso.js';
+import { forgePlan, modelLabel, chatStream, chatTransform, neuronsOf } from './kaliso.js';
 import { estimer, TARIFS } from './tarifs.js';
 import { LANGS, TYPES, BUDGETS, DELAIS, STATUTS } from './constantes.js';
 
@@ -108,26 +109,78 @@ async function getStatus(env) {
 }
 
 /* --- KALISO ---------------------------------------------------------------- */
-async function postForge(request, env, ctx) {
-  const b = await readJson(request);
-  const text = clean(b.text, 1500);
+/* --- budget de calcul Workers AI (offre gratuite : 10 000 neurones / jour) ---- */
+const AI_DAY = 86400;
+async function aiSpent(env) {
+  const w = Math.floor(now() / AI_DAY);
+  const row = await env.DB.prepare('SELECT n FROM hits WHERE k = ?1').bind(`ai:neurons:${w}`).first();
+  return row ? row.n : 0;
+}
+function aiSpend(env, n) {
+  const w = Math.floor(now() / AI_DAY);
+  return env.DB.prepare('INSERT INTO hits (k, n, exp) VALUES (?1, ?2, ?3) ON CONFLICT(k) DO UPDATE SET n = n + ?2')
+    .bind(`ai:neurons:${w}`, Math.max(1, Math.round(n)), (w + 1) * AI_DAY).run();
+}
+const aiLeft = async (env) => num(env.AI_NEURONS_DAY, 9000) - (await aiSpent(env));
+
+// conversation envoyée par le navigateur : rôles et longueurs vérifiés
+function readConversation(list) {
+  if (!Array.isArray(list)) return null;
+  const msgs = list.slice(-24).map((m) => ({
+    role: m && m.role === 'assistant' ? 'assistant' : 'user',
+    content: clean(m && m.content, m && m.role === 'assistant' ? 2400 : 1500),
+  })).filter((m) => m.content);
+  if (!msgs.length || msgs[msgs.length - 1].role !== 'user') return null;
+  return msgs;
+}
+const transcript = (msgs, lang) => msgs.map((m) => `${m.role === 'user' ? (lang === 'en' ? 'Visitor' : 'Visiteur') : 'KALISO'}: ${m.content}`).join('\n\n');
+
+async function postChat(request, env, ctx) {
+  const b = await readJson(request, 48000);
   const lang = LANGS.includes(b.lang) ? b.lang : 'fr';
+  const msgs = readConversation(b.messages);
+  if (!msgs) return fail(400, 'conversation invalide');
+  const turns = b.messages.filter((m) => m && m.role !== 'assistant').length;
+  if (turns > num(env.CHAT_MAX_TURNS, 14)) return fail(400, 'conversation trop longue', { reason: 'long' });
+  if (turns === 1 && msgs[0].content.length < 8) return fail(400, 'description trop courte', { field: 'text' });
+  const v = await visitor(request, env);
+  for (const r of await hitAll(env, [[`chat:h:${v}`, num(env.CHAT_PER_HOUR, 40), 3600], [`chat:d:${v}`, num(env.CHAT_PER_DAY, 150), 86400]])) {
+    if (!r.ok) return fail(429, 'trop de messages', { cold: true, reason: 'rate', retry: r.retry });
+  }
+  if ((await aiLeft(env)) <= 0) return fail(503, 'quota du jour atteint', { cold: true, reason: 'quota' });
+  let s;
+  try { s = await chatStream(env, msgs, lang); } catch (e) { return fail(503, 'la forge refroidit', { cold: true, reason: 'ai' }); }
+  // le coût est compté quand le flux se termine
+  let end; const ended = new Promise((r) => { end = r; });
+  ctx.waitUntil(ended.then(([raw, usage]) => aiSpend(env, neuronsOf(s.model, s.msgs, raw, usage))).catch(() => {}));
+  const body = s.stream.pipeThrough(chatTransform((raw, usage) => end([raw, usage])));
+  return new Response(body, { headers: { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-store', 'x-model': modelLabel(s.model), 'x-content-type-options': 'nosniff' } });
+}
+
+async function postForge(request, env, ctx) {
+  const b = await readJson(request, 48000);
+  const lang = LANGS.includes(b.lang) ? b.lang : 'fr';
+  const msgs = b.messages ? readConversation([...(Array.isArray(b.messages) ? b.messages : []), { role: 'user', content: '.' }]) : null;
+  const fromChat = !!(msgs && msgs.length > 1);
+  const text = fromChat ? clean(transcript(msgs.slice(0, -1), lang), 20000) : clean(b.text, 1500);
   if (text.length < 12) return fail(400, 'description trop courte', { field: 'text' });
   const v = await visitor(request, env);
   // compteurs du visiteur en un aller-retour ; le compteur global seulement s'il passe (un abuseur ne vide pas le quota)
   for (const r of await hitAll(env, [[`forge:h:${v}`, num(env.FORGE_PER_HOUR, 6), 3600], [`forge:d:${v}`, num(env.FORGE_PER_DAY, 20), 86400]])) {
     if (!r.ok) return fail(429, 'trop de demandes', { cold: true, reason: 'rate', retry: r.retry });
   }
+  if ((await aiLeft(env)) <= 0) return fail(503, 'quota du jour atteint', { cold: true, reason: 'quota' });
   const g = await hit(env, 'forge:global', num(env.FORGE_DAILY_CAP, 150), 86400);
   if (!g.ok) return fail(503, 'quota du jour atteint', { cold: true, reason: 'quota', retry: g.retry });
 
   const t0 = Date.now();
-  let plan = null, model = null, err = null;
-  try { ({ plan, model } = await forgePlan(env, text, lang)); } catch (e) { err = String((e && e.message) || e).slice(0, 300); }
+  let plan = null, model = null, err = null, neurons = 0;
+  try { ({ plan, model, neurons } = await forgePlan(env, text, lang, fromChat)); } catch (e) { err = String((e && e.message) || e).slice(0, 300); }
   const id = 'F-' + rid(10);
   const estimate = plan && !plan.offtopic ? estimer(plan) : null;
   ctx.waitUntil(env.DB.prepare('INSERT INTO forges (id, created_at, lang, text, plan, estimate, model, ms, ok) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)')
     .bind(id, iso(), lang, text, plan ? JSON.stringify(plan) : JSON.stringify({ error: err }), estimate ? JSON.stringify(estimate) : null, model, Date.now() - t0, plan ? 1 : 0).run());
+  ctx.waitUntil(aiSpend(env, neurons || 60).catch(() => {}));
   if (!plan) return fail(503, 'la forge refroidit', { cold: true, reason: 'ai', id });
   return json({ ok: true, id, plan, estimate, model: modelLabel(model), ms: Date.now() - t0, left: g.left });
 }
@@ -249,6 +302,7 @@ async function admin(request, env, url) {
       DB.prepare('SELECT COUNT(*) AS n FROM forges'),
       DB.prepare('SELECT n FROM hits WHERE k = ?1').bind(`forge:global:${w}`),
       DB.prepare('SELECT t.*, f.plan, f.estimate, f.model AS forge_model FROM tickets t LEFT JOIN forges f ON f.id = t.forge_id ORDER BY t.created_at DESC LIMIT 300'),
+      DB.prepare('SELECT n FROM hits WHERE k = ?1').bind(`ai:neurons:${w}`),
     ]);
     const first = (i) => (r[i].results && r[i].results[0]) || null;
     if (locked(first(0))) return LOCKED();
@@ -257,7 +311,7 @@ async function admin(request, env, url) {
     const fToday = first(5) || {};
     return json({ ok: true, status, labels: { TYPES, BUDGETS, DELAIS, STATUTS },
       tickets: { total: (first(4) || {}).n || 0, today: (first(3) || {}).n || 0, byStatus: Object.fromEntries((r[2].results || []).map((x) => [x.status, x.n])) },
-      forge: { today: fToday.n || 0, okToday: fToday.ok || 0, total: (first(6) || {}).n || 0, cap: num(env.FORGE_DAILY_CAP, 150), used: (first(7) || {}).n || 0, model: modelLabel(env.MODEL), prices: TARIFS.afficher },
+      forge: { today: fToday.n || 0, okToday: fToday.ok || 0, total: (first(6) || {}).n || 0, cap: num(env.FORGE_DAILY_CAP, 150), used: (first(7) || {}).n || 0, model: modelLabel(env.MODEL), prices: TARIFS.afficher, neurons: (first(9) || {}).n || 0, neuronsCap: num(env.AI_NEURONS_DAY, 9000) },
       list: (r[8].results || []).map(({ access_key, ...x }) => parseRow(x)) });
   }
   if (p === '/forges' && m === 'GET') {
@@ -343,6 +397,7 @@ async function api(request, env, ctx, url) {
     const s = await getStatus(env);
     return json({ ok: true, lit: s.lit, note: s.note, updated: s.updated }, 200, { 'cache-control': 'public, max-age=60' });
   }
+  if (p === '/api/chat' && m === 'POST') return postChat(request, env, ctx);
   if (p === '/api/forge' && m === 'POST') return postForge(request, env, ctx);
   if (p === '/api/tickets' && m === 'POST') return postTicket(request, env, ctx);
   const mt = p.match(/^\/api\/tickets\/([A-Z0-9-]+)$/);

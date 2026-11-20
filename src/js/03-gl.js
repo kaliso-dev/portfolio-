@@ -23,16 +23,17 @@ function glProgram(gl, fsSrc) {
 
 /* --- Verre liquide (façon iOS 26) -------------------------------------------
    Adapté de archisvaze/liquid-glass (MIT, © 2026 Archis Vaze), version WebGL.
-   Les éléments .lg du DOM sont transparents : leur verre est dessiné ici, dans le
-   fond, en réfractant la soie. Réglages : épaisseur 37, biseau 60, IOR 3,
+   Le verre de chaque élément .lg est calculé ici (il réfracte la soie du fond), puis
+   recopié dans un petit canvas placé DANS l'élément : il défile avec lui, sans décalage,
+   même quand le navigateur fait défiler la page tout seul (doigt, barre de défilement). Réglages : épaisseur 37, biseau 60, IOR 3,
    flou 5,5, spéculaire 0,45, teinte 8 %, ombre 0,5 ; reflet asymétrique
    (lumière en haut à gauche) et légère dispersion sur les bords, plus proches d'Apple. */
-const GLASS = { thick: 37, bezel: 60, ior: 3.0, blur: 5.5, spec: 0.45, tint: 0.08, shadow: 0.5, max: 16 };
+const GLASS = { thick: 37, bezel: 60, ior: 3.0, blur: 5.5, spec: 0.45, tint: 0.08, shadow: 0.5, max: 16, margin: 36 };
 const GLASS_FRAG = `#version 300 es
 precision highp float;
 uniform sampler2D uSilk;
-uniform vec2 uRes; uniform float uDpr; uniform int uN;
-uniform vec4 uR[16]; uniform vec4 uP[16];
+uniform vec2 uRes; uniform float uDpr; uniform int uMode;
+uniform vec4 uR; uniform vec4 uP;
 uniform float uThick; uniform float uBezel; uniform float uIOR; uniform float uBlur; uniform float uSpec; uniform float uTint; uniform float uShadow;
 out vec4 o;
 float sdRR(vec2 p, vec2 h, float r){ vec2 q = abs(p) - h + r; return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r; }
@@ -43,31 +44,26 @@ const vec2 PD[12] = vec2[12](vec2(-0.326, -0.406), vec2(-0.840, -0.074), vec2(-0
 vec3 blurBg(vec2 css, float r){ if (r < 0.5) return bg(css); vec3 s = vec3(0.0); for (int i = 0; i < 12; i++) s += bg(css + PD[i] * r); return s / 12.0; }
 void main(){
   vec2 css = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y) / uDpr;
-  vec3 col = bg(css);
-  float sh = 0.0; int hit = -1; float hsd = 1e9;
-  for (int i = 0; i < 16; i++) {
-    if (i >= uN) break;
-    vec2 p = css - uR[i].xy;
-    float sd = sdRR(p, uR[i].zw, uP[i].x);
-    if (sd < hsd) { hsd = sd; hit = i; }
-    float ds = max(sdRR(p - vec2(0.0, 6.0), uR[i].zw, uP[i].x), 0.0);
-    sh = max(sh, uShadow * uP[i].y * exp(-ds * ds / 700.0) * 0.55);
-  }
-  col *= 1.0 - sh;
-  if (hit >= 0 && hsd < 1.0) {
-    vec2 p = css - uR[hit].xy; vec2 hs = uR[hit].zw; float r = uP[hit].x;
-    float a = uP[hit].y, hov = uP[hit].z, pro = uP[hit].w;
-    float d = -hsd;
+  if (uMode == 1) { o = vec4(bg(css), 1.0); return; }
+  vec2 p = css - uR.xy; vec2 hs = uR.zw; float r = uP.x;
+  float hov = uP.z, pro = uP.w;
+  float sd = sdRR(p, hs, r);
+  float ds = max(sdRR(p - vec2(0.0, 6.0), hs, r), 0.0);
+  float sh = uShadow * exp(-ds * ds / 700.0) * 0.55;
+  float d = -sd;
+  float cov = smoothstep(0.0, 1.5, d);
+  vec3 c = vec3(0.0);
+  if (sd < 1.0) {
     float bez = max(1.0, min(uBezel, min(r, min(hs.x, hs.y)) - 1.0));
     float t = clamp(d / bez, 0.0, 1.0);
     float h = surf(t), h2 = surf(min(t + 0.001, 1.0));
     float slope = atan((h2 - h) / 0.001 * (uThick / bez));
     float thR = asin(clamp(sin(slope) / uIOR, -1.0, 1.0));
     float disp = h * uThick * (tan(slope) - tan(thR));
-    vec2 g = vec2(sdRR(p + vec2(0.5, 0.0), hs, r) - hsd, sdRR(p + vec2(0.0, 0.5), hs, r) - hsd);
+    vec2 g = vec2(sdRR(p + vec2(0.5, 0.0), hs, r) - sd, sdRR(p + vec2(0.0, 0.5), hs, r) - sd);
     g = normalize(g + vec2(1e-6));
     vec2 off = -g * disp;
-    vec3 c = vec3(blurBg(css + off * 0.95, uBlur).r, blurBg(css + off, uBlur).g, blurBg(css + off * 1.05, uBlur).b);
+    c = vec3(blurBg(css + off * 0.95, uBlur).r, blurBg(css + off, uBlur).g, blurBg(css + off * 1.05, uBlur).b);
     vec2 L = normalize(vec2(-0.55, -0.83));
     float rimF = 1.0 - smoothstep(0.0, bez * 0.4, d);
     float spec = pow(max(dot(g, L), 0.0) * rimF, 1.5) + 0.45 * pow(max(dot(g, -L), 0.0) * rimF, 2.0);
@@ -78,9 +74,9 @@ void main(){
     c += vec3(rim * 0.15 * uSpec);
     c = mix(c, vec3(1.0), uTint + hov * 0.045);
     c = mix(c, vec3(0.955, 0.948, 0.93), pro * 0.86);
-    col = mix(col, c, smoothstep(0.0, 1.5, d) * a);
   }
-  o = vec4(col, 1.0);
+  // calque prémultiplié : l'ombre (noire) sous le verre
+  o = vec4(c * cov, cov + sh * (1.0 - cov));
 }`;
 
 /* --- Fond : surface métallique sombre qui réagit au curseur ---------------- */
@@ -260,7 +256,7 @@ class Fluid {
 class SteelBackground {
   constructor(canvas) {
     this.c = canvas;
-    this.gl = canvas.getContext('webgl2', { alpha: false, antialias: false, depth: false, powerPreference: 'low-power' });
+    this.gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, powerPreference: 'low-power' });
     this.trail = new Float32Array(24 * 4);
     this.ti = 0; this.last = { x: POINTER.x, y: POINTER.y };
     if (!this.gl) return;
@@ -272,7 +268,7 @@ class SteelBackground {
     const lessGlass = window.matchMedia && matchMedia('(prefers-reduced-transparency: reduce)').matches;
     this.glass = lessGlass ? null : glProgram(this.gl, GLASS_FRAG);
     if (this.glass) document.documentElement.classList.add('lg-on');
-    this.gR = new Float32Array(GLASS.max * 4); this.gP = new Float32Array(GLASS.max * 4);
+    this.items = [];
     this.glassOn = false;
     this.resize();
     window.addEventListener('resize', () => { this.resize(); this.fluid && this.fluid.ok && this.fluid.resize(); });
@@ -314,32 +310,30 @@ class SteelBackground {
   }
   // les éléments .lg visibles de la page vivante (pas les copies d'une coupe en cours)
   collectGlass() {
+    const items = this.items; items.length = 0;
     if (!this.glass) return 0;
-    const W = innerWidth, H = innerHeight;
-    let n = 0;
+    const W = innerWidth, H = innerHeight, M = GLASS.margin;
     for (const el of document.querySelectorAll('.lg')) {
-      if (n >= GLASS.max) break;
+      if (items.length >= GLASS.max) break;
       if (el.closest('.cut-layer')) continue;
       const r = el.getBoundingClientRect();
-      if (r.width < 2 || r.height < 2 || r.bottom < -40 || r.top > H + 40 || r.right < -40 || r.left > W + 40) continue;
-      let a = 1;
-      for (let x = el, d = 0; x && x !== document.body && d < 10; x = x.parentElement, d++) {
-        const cs = getComputedStyle(x);
-        if (cs.display === 'none' || cs.visibility === 'hidden') { a = 0; break; }
-        a *= +cs.opacity;
-        if (a < 0.01) break;
+      if (r.width < 2 || r.height < 2 || r.bottom < -M || r.top > H + M || r.right < -M || r.left > W + M) continue;
+      let cv = el._lgc;
+      if (!cv || cv.parentNode !== el) {
+        cv = el._lgc = document.createElement('canvas');
+        cv.className = 'lg-cv'; cv.setAttribute('aria-hidden', 'true');
+        el.prepend(cv);
       }
-      if (a < 0.01) continue;
-      const cr = getComputedStyle(el).borderTopLeftRadius;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden') continue;
+      const cr = cs.borderTopLeftRadius;
       let rad = parseFloat(cr) || 0;
       if (cr.endsWith('%')) rad = Math.min(r.width, r.height) * rad / 100;
       rad = Math.min(rad, r.width / 2, r.height / 2);
       el._lgH = lerp(el._lgH || 0, el.matches(':hover') && !el.disabled ? 1 : 0, 0.18);
-      this.gR.set([r.left + r.width / 2, r.top + r.height / 2, r.width / 2, r.height / 2], n * 4);
-      this.gP.set([rad, a, el._lgH, el.classList.contains('lg-pro') ? 1 : 0], n * 4);
-      n++;
+      items.push({ cv, x: r.left, y: r.top, w: r.width, h: r.height, rad, hov: el._lgH, pro: el.classList.contains('lg-pro') ? 1 : 0 });
     }
-    return n;
+    return items.length;
   }
   draw() {
     const gl = this.gl; if (!gl) return;
@@ -379,10 +373,11 @@ class SteelBackground {
     gl.uniform1f(u.uExposure, 1.3);
     gl.uniform1f(u.uGrain, 0.035);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    if (this.glassOn) this.drawGlass(nGlass);
+    if (this.glassOn) this.drawGlass();
   }
-  drawGlass(n) {
+  drawGlass() {
     const gl = this.gl, { p, u } = this.glass;
+    const k = this.c.width / innerWidth, M = GLASS.margin;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, this.c.width, this.c.height);
     gl.useProgram(p);
@@ -390,12 +385,30 @@ class SteelBackground {
     gl.bindTexture(gl.TEXTURE_2D, this.silk.tex);
     gl.uniform1i(u.uSilk, 0);
     gl.uniform2f(u.uRes, this.c.width, this.c.height);
-    gl.uniform1f(u.uDpr, this.c.width / innerWidth);
-    gl.uniform1i(u.uN, n);
-    gl.uniform4fv(u.uR, this.gR);
-    gl.uniform4fv(u.uP, this.gP);
+    gl.uniform1f(u.uDpr, k);
     gl.uniform1f(u.uThick, GLASS.thick); gl.uniform1f(u.uBezel, GLASS.bezel); gl.uniform1f(u.uIOR, GLASS.ior);
     gl.uniform1f(u.uBlur, GLASS.blur); gl.uniform1f(u.uSpec, GLASS.spec); gl.uniform1f(u.uTint, GLASS.tint); gl.uniform1f(u.uShadow, GLASS.shadow);
+    // 1) chaque verre, seul, sur fond transparent, puis recopié dans le canvas de son élément
+    gl.uniform1i(u.uMode, 0);
+    gl.enable(gl.SCISSOR_TEST);
+    gl.clearColor(0, 0, 0, 0);
+    for (const it of this.items) {
+      const x0 = Math.floor((it.x - M) * k), y0 = Math.floor((it.y - M) * k);
+      const w = Math.ceil((it.w + 2 * M) * k), h = Math.ceil((it.h + 2 * M) * k);
+      gl.scissor(x0, this.c.height - y0 - h, w, h);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.uniform4f(u.uR, it.x + it.w / 2, it.y + it.h / 2, it.w / 2, it.h / 2);
+      gl.uniform4f(u.uP, it.rad, 1, it.hov, it.pro);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      const cv = it.cv;
+      if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+      const g2 = cv.getContext('2d');
+      g2.clearRect(0, 0, w, h);
+      try { g2.drawImage(this.c, x0, y0, w, h, 0, 0, w, h); } catch (e) {}
+    }
+    gl.disable(gl.SCISSOR_TEST);
+    // 2) l'écran : la soie seule
+    gl.uniform1i(u.uMode, 1);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 }

@@ -175,13 +175,21 @@ def main():
     if "/*__PROJETS__*/[]" not in js:
         sys.exit("✗ marqueur /*__PROJETS__*/[] introuvable dans src/js")
     js = js.replace("/*__PROJETS__*/[]", data)
+    # illustrations du compte rendu de la forge : src/assets/forge/<diapo>.(webp|avif|png|jpg|svg)
+    art = {}
+    fdir = SRC / "assets" / "forge"
+    if fdir.exists():
+        for f in sorted(fdir.iterdir()):
+            if f.suffix.lower() in (".webp", ".avif", ".png", ".jpg", ".jpeg", ".svg") and f.stem in ("plan", "features", "stack", "steps", "range", "questions"):
+                art.setdefault(f.stem, "assets/forge/" + f.name)
+    js = js.replace("/*__FORGE_ART__*/{}", json.dumps(art))
     site_url = (os.environ.get("SITE_URL") or os.environ.get("URL") or "").rstrip("/")
     out = tpl.replace("/*__CSS__*/", css).replace("/*__JS__*/", js).replace("__SITE_URL__", site_url)
     dist = ROOT / "dist"
     dist.mkdir(exist_ok=True)
     (dist / "index.html").write_text(out, encoding="utf-8")
     if (SRC / "assets").exists():
-        shutil.copytree(SRC / "assets", dist / "assets", dirs_exist_ok=True)
+        shutil.copytree(SRC / "assets", dist / "assets", dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.md"))
     for extra in ("robots.txt", "_headers"):
         if (SRC / extra).exists():
             shutil.copy(SRC / extra, dist / extra)

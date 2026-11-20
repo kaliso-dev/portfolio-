@@ -344,7 +344,7 @@ header .wrap{display:flex;align-items:center;gap:16px;height:60px}
   function renderForges() {
     const box = $('#forges'); box.replaceChildren();
     const f = S.overview.forge;
-    box.append(el('p', { class: 'muted', text: `Modèle : ${f.model} · ${f.used}/${f.cap} demandes aujourd’hui (remise à zéro à 01:00, heure de Paris en hiver) · ${f.total} au total · fourchettes ${f.prices ? 'affichées' : 'masquées'} (worker/src/tarifs.js)` }));
+    box.append(el('p', { class: 'muted', text: `Modèle : ${f.model} · calcul du jour : ${f.neurons || 0}/${f.neuronsCap || 9000} neurones (conversations + plans) · ${f.used}/${f.cap} plans aujourd’hui (remise à zéro à 01:00, heure de Paris en hiver) · ${f.total} au total · fourchettes ${f.prices ? 'affichées' : 'masquées'} (worker/src/tarifs.js)` }));
     if (!S.forges.length) { box.append(el('div', { class: 'empty', text: 'personne n’a encore consulté KALISO.' })); return; }
     S.forges.forEach((x) => {
       const open = S.open.has(x.id);

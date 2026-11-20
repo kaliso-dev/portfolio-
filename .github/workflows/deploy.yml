@@ -147,3 +147,10 @@ jobs:
           curl -sS -X POST "$URL/api/forge" -H "content-type: application/json" \
             --data '{"text":"Test de déploiement : un site vitrine pour un restaurant marocain à Lyon, avec réservation en ligne","lang":"fr"}' \
             | python3 -c "import sys,json; d=json.load(sys.stdin); p=d.get('plan') or {}; print(json.dumps({k: d.get(k) for k in ('ok','model','ms','estimate','error','reason')}, ensure_ascii=False)); print('titre :', p.get('title')); print('résumé :', p.get('summary')); print('fonctionnalités :', p.get('features')); print('stack :', p.get('stack'))"
+          echo "--- KALISO en conversation (flux) :"
+          curl -sS -N -X POST "$URL/api/chat" -H "content-type: application/json" -D chat.h \
+            --data '{"lang":"fr","messages":[{"role":"user","content":"Test de déploiement : je fabrique des bijoux en argent à Fès et je veux les vendre en ligne en Europe"}]}' > chat.sse || true
+          grep -i "content-type\|x-model\|server-timing" chat.h || true
+          grep -q "^data:" chat.sse || head -c 400 chat.sse; echo
+          python3 -c "import json; ev=[json.loads(l[5:]) for l in open('chat.sse',encoding='utf-8') if l.startswith('data:')]; print('morceaux :', sum(1 for e in ev if 't' in e)); print(''.join(e.get('t','') for e in ev)); print('suggestions :', [e.get('chips') for e in ev if e.get('done')]); print([e for e in ev if 'error' in e or 'ok' in e])"
+          echo "--- police Google Sans Flex : $(curl -sS -o /dev/null -w '%{http_code}' 'https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@300..600&display=swap')"

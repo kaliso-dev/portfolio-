@@ -125,8 +125,6 @@ const UI = {
   'h.theme': ['changer la couleur d\'accent', 'change the accent colour'],
   'h.cd': ['index · projets · a-propos · contact', 'index · projets · a-propos · contact'],
   'h.clear': ['effacer l\'écran', 'clear the screen'],
-  'h.duel': ['défier le chevalier', 'challenge the knight'],
-  'term.salam': ['wa alaykoum salam, voyageur. que ta route soit douce.', 'wa alaykum salam, traveller. may your road be gentle.'],
   'term.total': ['total {n}', 'total {n}'],
   'term.openHint': ['→ open <nom> pour ouvrir un projet', '→ open <name> to open a project'],
   'term.openUsage': ['usage : open <projet>   (ls pour la liste)', 'usage: open <project>   (ls for the list)'],
@@ -140,7 +138,6 @@ const UI = {
   'term.themeNf': ['theme : couleur inconnue : {x}', 'theme: unknown colour: {x}'],
   'term.current': ['(actuel)', '(current)'],
   'term.langSet': ['langue → {x}', 'language → {x}'],
-  'term.sudo': ['permission refusée : seul le chevalier détient la clé.', 'permission denied: only the knight holds the key.'],
   'term.bye': ['déconnexion…', 'logging out…'],
   'term.soundOn': ['son : activé', 'sound: on'],
   'term.soundOff': ['son : coupé', 'sound: off'],
@@ -346,41 +343,22 @@ const UI = {
   'mod.mobile-natif': ['mobile natif', 'native mobile'],
   'mod.contenu': ['gestion de contenu', 'content management'],
   'mod.3d': ['3D', '3D'],
-  // secrets
-  'seal.found': ['Sceau {n}/{t} brisé — {name}', 'Seal {n}/{t} broken — {name}'],
-  'seal.all': ['Les sept sceaux sont brisés. Le trésor t’attend : tape tresor dans le terminal.', 'The seven seals are broken. The treasure awaits: type tresor in the terminal.'],
-  'seal.more': ['sceaux → terminal', 'sceaux → terminal'],
-  'seal.progress': ['{n}/{t} sceaux brisés', '{n}/{t} seals broken'],
-  'seal.konami': ['le code des anciens', 'the elders\' code'],
-  'seal.salam': ['le salut', 'the greeting'],
-  'seal.knight': ['le chevalier éveillé', 'the knight awakened'],
-  'seal.duel': ['la victoire en duel', 'the duel won'],
-  'seal.desert': ['le voyageur égaré', 'the lost traveller'],
-  'seal.console': ['le regard du forgeron', 'the smith\'s eye'],
-  'seal.polyglot': ['le polyglotte', 'the polyglot'],
-  'hint.konami': ['↑ ↑ ↓ ↓ …', '↑ ↑ ↓ ↓ …'],
-  'hint.salam': ['la politesse d’abord', 'manners first'],
-  'hint.knight': ['réveille le chevalier, sept fois', 'wake the knight, seven times'],
-  'hint.duel': ['croise le fer', 'cross swords'],
-  'hint.desert': ['perds-toi', 'get lost'],
-  'hint.console': ['regarde sous le capot', 'look under the hood'],
-  'hint.polyglot': ['parle toutes les langues de la forge', 'speak every tongue of the forge'],
-  'seal.console.log': ['Tu lis le code ? Le forgeron aussi. Tape kaliso.sceau() pour briser un sceau.', 'Reading the code? So does the smith. Type kaliso.sceau() to break a seal.'],
-  'treasure.locked': ['le coffre est scellé : {n}/{t} sceaux. tape sceaux pour les indices.', 'the chest is sealed: {n}/{t} seals. type sceaux for hints.'],
-  'treasure.open': ['Le coffre s’ouvre. Tu as débloqué l’accent or (theme or), et tes prochains tickets porteront la marque des sept sceaux : le forgeron saura que tu es des nôtres.', 'The chest opens. You unlocked the gold accent (theme or), and your next tickets will bear the mark of the seven seals: the smith will know you are one of us.'],
-  // duel
-  'duel.intro': ['Le chevalier te défie. Trois touches pour gagner. Choisis : 1) estoc · 2) taille · 3) parade', 'The knight challenges you. First to three hits wins. Choose: 1) thrust · 2) slash · 3) parry'],
-  'duel.rules': ['l’estoc perce la taille, la taille brise la parade, la parade dévie l’estoc.', 'the thrust pierces the slash, the slash breaks the parry, the parry deflects the thrust.'],
-  'duel.moves': [['estoc', 'taille', 'parade'], ['thrust', 'slash', 'parry']],
-  'duel.vs': ['toi : {a}  ·  chevalier : {b}', 'you: {a}  ·  knight: {b}'],
-  'duel.hit': ['touché ! point pour toi.', 'hit! a point for you.'],
-  'duel.hurt': ['le chevalier te touche.', 'the knight hits you.'],
-  'duel.tie': ['les lames se croisent : égalité.', 'blades cross: a tie.'],
-  'duel.score': ['score {a} – {b}', 'score {a} – {b}'],
-  'duel.win': ['victoire ! le chevalier pose un genou à terre.', 'victory! the knight takes a knee.'],
-  'duel.lose': ['défaite… le chevalier rengaine. revanche : duel', 'defeat… the knight sheathes his blade. rematch: duel'],
-  'duel.pick': ['1, 2 ou 3 (ou « fuir »)', '1, 2 or 3 (or “flee”)'],
-  'duel.flee': ['tu rengaines. le chevalier hoche la tête.', 'you sheathe your blade. the knight nods.'],
+  // forge v3 : la conversation
+  'cv.ph2': ['Réponds à KALISO…', 'Reply to KALISO…'],
+  'cv.think': ['KALISO réfléchit', 'KALISO is thinking'],
+  'cv.report': ['Voir le compte rendu', 'See the summary'],
+  'cv.restart': ['Recommencer', 'Start over'],
+  'cv.restartAsk': ['Effacer la discussion et recommencer ?', 'Clear the conversation and start over?'],
+  'cv.back': ['Reprendre la discussion', 'Back to the conversation'],
+  'cv.reportTitle': ['Compte rendu', 'Summary'],
+  'cv.reportSub': ['Tout ce que KALISO a retenu de votre discussion. Tu peux encore l’affiner, ou l’envoyer à Sofiene.', 'Everything KALISO took from your conversation. You can still refine it, or send it to Sofiene.'],
+  'cv.long': ['On a fait le tour de la question : regarde le compte rendu, tu pourras toujours l’envoyer à Sofiene.', 'We have covered it all: have a look at the summary, you can then send it to Sofiene.'],
+  'cv.cold': ['La forge refroidit un instant : {why} Tu peux tout de même envoyer ta demande à Sofiene.', 'The forge is cooling down for a moment: {why} You can still send your request to Sofiene.'],
+  'cv.sendDirect': ['Envoyer à Sofiene', 'Send to Sofiene'],
+  'cv.retry': ['Réessayer', 'Try again'],
+  'cv.you': ['Toi', 'You'],
+  'cv.stop': ['Arrêter', 'Stop'],
+  'cv.reportLoad': ['KALISO rédige le compte rendu', 'KALISO is writing the summary'],
   // langues
   'lang.switch': ['Changer de langue', 'Change language'],
   // unités de temps (études de cas)
@@ -465,7 +443,6 @@ function localizeProject(p) {
 function setLang(l) {
   if (!LANGS.includes(l) || l === LANG) return false;
   try { localStorage.setItem('kaliso-lang', l); } catch (e) {}
-  if (typeof Seals !== 'undefined') Seals.lang(l);
   // un voile tombe, la page renaît dans l'autre langue (puis la lame tranche le voile)
   const u = new URL(location.href);
   u.searchParams.delete('lang');

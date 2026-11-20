@@ -50,13 +50,10 @@ const ACCENTS = {
   laiton: { hex: '#d9b46a', label: ['laiton de Fès', 'Fez brass'] },
   majorelle: { hex: '#7b86ff', label: ['bleu Majorelle', 'Majorelle blue'] },
   marrakech: { hex: '#ec5b43', label: ['rouge Marrakech', 'Marrakech red'] },
-  // récompense des sept sceaux (07d-secrets.js)
-  or: { hex: '#e3b23c', label: ['or des sept sceaux', 'gold of the seven seals'], secret: true },
 };
 // bleu ciel, pas trop clair : coloration du terminal et des captures de code
 const CODE = { hex: '#4ea8de', rgb: [78, 168, 222] };
 const accentLabel = (k) => { const l = ACCENTS[k].label; return Array.isArray(l) ? (l[LI] || l[0]) : l; };
-const sealsDone = () => { try { return JSON.parse(localStorage.getItem('kaliso-seals') || '[]').length >= 7; } catch (e) { return false; } };
 const hexRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 // variante « texte » : même teinte, éclaircie juste assez pour 4,7:1 de contraste sur le fond
 function legibleRgb(rgb, bg = [11, 13, 11], target = 4.7) {
@@ -70,7 +67,7 @@ function legibleRgb(rgb, bg = [11, 13, 11], target = 4.7) {
 const ACCENT = { name: 'blanc', hex: ACCENTS.blanc.hex, rgb: hexRgb(ACCENTS.blanc.hex), text: ACCENTS.blanc.hex, bright: hexRgb(ACCENTS.blanc.hex), subs: new Set() };
 function setAccent(name, persist = false) {
   const a = ACCENTS[name];
-  if (!a || (a.secret && !sealsDone())) return false;
+  if (!a) return false;
   ACCENT.name = name; ACCENT.hex = a.hex; ACCENT.rgb = hexRgb(a.hex);
   const tx = legibleRgb(ACCENT.rgb);
   ACCENT.text = `rgb(${tx.join(',')})`;
@@ -85,7 +82,7 @@ function setAccent(name, persist = false) {
 }
 (() => {
   let n = (typeof SITE !== 'undefined' && SITE.accent) || 'blanc';
-  try { const saved = localStorage.getItem('kaliso-accent2'); if (saved && ACCENTS[saved] && (!ACCENTS[saved].secret || sealsDone())) n = saved; } catch (e) {}
+  try { const saved = localStorage.getItem('kaliso-accent2'); if (saved && ACCENTS[saved]) n = saved; } catch (e) {}
   try { const q = new URLSearchParams(location.search).get('accent'); if (q && ACCENTS[q]) n = q; } catch (e) {}
   setAccent(n);
 })();

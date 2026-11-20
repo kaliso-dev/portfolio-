@@ -1,5 +1,5 @@
 /* ==========================================================================
-   TERMINAL — commandes, KALISO (forge), tickets, suivi, duel, secrets
+   TERMINAL — commandes, KALISO (forge), tickets, suivi
    ========================================================================== */
 const TERM_BANNER = [
   ' _  __    _    _     ___ ____   ___  ',
@@ -7,11 +7,6 @@ const TERM_BANNER = [
   "| ' /   / _ \\ | |    | |\\___ \\| | | |",
   '| . \\  / ___ \\| |___ | | ___) | |_| |',
   '|_|\\_\\/_/   \\_\\_____|___|____/ \\___/ ',
-];
-const DUEL_ART = [
-  '     O                 O     ',
-  '    /|\\__/        \\__/|\\    ',
-  '    / \\               / \\    ',
 ];
 const TK_TYPES = ['vitrine', 'ecommerce', 'webapp', 'mobile', 'api', 'ia', 'outil', 'autre'];
 const TK_BUDGETS = ['lt2k', '2-5k', '5-10k', '10k+', 'tbd'];
@@ -71,13 +66,13 @@ function PageTerminal() {
           <input id="term-in" class="term-in" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" enterkeyhint="send" dir="auto" aria-label="${esc(t('term.cmd'))}">
         </form>
       </div>
-      <div class="term-chips">${['help', 'forge', 'ticket', 'claude', 'ls', 'lang', 'duel'].map((c) => `<button type="button" data-run="${c}">${c}</button>`).join('')}<a class="term-switch" href="#forge">${esc(t('gui.visual'))} →</a></div>
+      <div class="term-chips">${['help', 'forge', 'ticket', 'status', 'claude', 'ls', 'lang'].map((c) => `<button type="button" data-run="${c}">${c}</button>`).join('')}</div>
     </div></section>
   </div>`);
   const out = $('.term-out', el), input = $('.term-in', el), ps1 = $('.term-ps1', el), form = $('.term-line', el);
   const page = { key: 'terminal', el, scroll: false, timers: [] };
   const hist = []; let hi = 0;
-  let mode = null;    // null | { kind: 'ticket' | 'forge' | 'duel', ... }
+  let mode = null;    // null | { kind: 'ticket' | 'forge', ... }
   let last = null;    // dernier ticket
   let draft = Draft.get();   // dernière description donnée à KALISO (et son plan), partagée avec la forge visuelle
   const setDraft = (d) => { draft = d; Draft.set(d); };
@@ -107,7 +102,7 @@ function PageTerminal() {
     help: { run() {
       const rows = [['whoami', 'h.whoami'], ['ls', 'h.ls'], ['open <projet>', 'h.open'], ['cat about.md', 'h.cat'], ['forge', 'h.forge'],
         ['ticket', 'h.ticket'], ['status [id]', 'h.status'], ['claude', 'h.claude'], ['contact', 'h.contact'], ['lang [fr|en]', 'h.lang'],
-        ['theme [couleur]', 'h.theme'], ['duel', 'h.duel'], ['visuel', 'h.visuel'], ['cd <page>', 'h.cd'], ['clear', 'h.clear']];
+        ['theme [couleur]', 'h.theme'], ['visuel', 'h.visuel'], ['cd <page>', 'h.cd'], ['clear', 'h.clear']];
       print(rows.map(([c, d]) => `  ${cmdLink(c.startsWith('cat') ? 'cat about.md' : c.split(' ')[0], c)}${' '.repeat(Math.max(2, 18 - c.length))}<span class="dim">${esc(t(d))}</span>`).join('\n'));
       say('  ' + t('term.keys'), 'dim');
     } },
@@ -152,7 +147,7 @@ function PageTerminal() {
       const k = (arg || '').toLowerCase();
       if (k && setAccent(k, true)) return print(`accent → <span class="acc">${esc(accentLabel(k))}</span>`);
       if (k) say(t('term.themeNf', { x: arg }), 'err');
-      print(Object.entries(ACCENTS).filter(([, a]) => !a.secret || sealsDone()).map(([n, a]) => `<span style="color:${a.hex}">■</span> ${cmdLink('theme ' + n, n.padEnd(10))} <span class="dim">${esc(accentLabel(n))}${n === ACCENT.name ? ' ' + esc(t('term.current')) : ''}</span>`).join('\n'));
+      print(Object.entries(ACCENTS).map(([n, a]) => `<span style="color:${a.hex}">■</span> ${cmdLink('theme ' + n, n.padEnd(10))} <span class="dim">${esc(accentLabel(n))}${n === ACCENT.name ? ' ' + esc(t('term.current')) : ''}</span>`).join('\n'));
     } },
     lang: { run(arg) {
       const l = (arg || '').toLowerCase().slice(0, 2);
@@ -164,7 +159,6 @@ function PageTerminal() {
       }
       print(LANGS.map((x) => `  ${cmdLink('lang ' + x, ('lang ' + x).padEnd(9))} <span class="dim" lang="${x}">${esc(LANG_NAMES[x])}${x === LANG ? ' ' + esc(t('term.current')) : ''}</span>`).join('\n'));
     } },
-    duel: { run() { startDuel(); } },
     visuel: { run() { page.timers.push(setTimeout(() => go('#forge'), 200)); } },
     claude: { run() {
       print(`<span class="acc">claude</span> <span class="dim">${esc(t('claude.who'))}</span>`);
@@ -178,16 +172,11 @@ function PageTerminal() {
     date: { hidden: true, run() { say(new Date().toLocaleString(LANG, { dateStyle: 'full', timeStyle: 'short' })); } },
     echo: { hidden: true, run(arg) { say(arg || ''); } },
     history: { hidden: true, run() { hist.forEach((c, i) => say(`${String(i + 1).padStart(3)}  ${c}`, 'dim')); } },
-    sudo: { hidden: true, run() { say(t('term.sudo'), 'err'); } },
     exit: { hidden: true, run() { say(t('term.bye'), 'dim'); page.timers.push(setTimeout(() => go('#index'), 300)); } },
     sound: { hidden: true, run(arg) { if ((arg === 'on') !== Sound.on) Sound.toggle(); say(t(Sound.on ? 'term.soundOn' : 'term.soundOff'), 'dim'); } },
     banner: { hidden: true, run() { printBanner(); } },
-    salam: { hidden: true, run() { say(t('term.salam'), 'acc'); Seals.find('salam'); } },
-    sceaux: { hidden: true, run() { seals(); } },
-    tresor: { hidden: true, run() { treasure(); } },
   };
   CMDS.kaliso = CMDS.forge; CMDS.gui = CMDS.visuel; CMDS.visual = CMDS.visuel;
-  CMDS.seals = CMDS.sceaux; CMDS.treasure = CMDS.tresor;
   const names = () => Object.keys(CMDS).filter((k) => !CMDS[k].hidden && k !== 'kaliso');
 
   /* --- KALISO ------------------------------------------------------------------ */
@@ -198,7 +187,6 @@ function PageTerminal() {
     print(`<span class="acc">KALISO</span> <span class="dim">— ${esc(t('h.forge'))}</span>`);
     para(t('fg.ask'));
     say(t('fg.privacy'), 'dim');
-    print(`<span class="dim">${esc(t('gui.visual'))} :</span> <a class="tcmd" href="#forge">#forge</a>`);
     setPS('forge ›');
   }
   async function runForge(text) {
@@ -341,7 +329,7 @@ function PageTerminal() {
     let r = null;
     try {
       r = await API.ticket({ name: tk.nom, email: tk.email, type: tk.type, budget: tk.budget, deadline: tk.delai, lang: LANG, forgeId: tk.forgeId,
-        message: tk.message + (sealsDone() ? '\n\n⚜ 7/7' : ''), website: '' });
+        message: tk.message, website: '' });
     } catch (e) { r = null; }
     busy = false; input.disabled = false;
     if (!IS_TOUCH) input.focus({ preventScroll: true });
@@ -415,54 +403,12 @@ function PageTerminal() {
   CMDS.envoyer = { hidden: true, run() { if (!last) return say(t('tk.noSend'), 'err'); window.location.href = mailtoFor(last, ticketText(last, 50)); } };
   CMDS.copy = CMDS.copier; CMDS.download = CMDS.telecharger; CMDS.mail = CMDS.envoyer; CMDS.send = CMDS.envoyer;
 
-  /* --- duel ----------------------------------------------------------------------- */
-  function startDuel() {
-    mode = { kind: 'duel', me: 0, him: 0 };
-    print(esc(DUEL_ART.join('\n')), 'pre acc');
-    para(t('duel.intro'));
-    say(t('duel.rules'), 'dim');
-    const mv = t('duel.moves');
-    print(mv.map((m, i) => `  ${cmdLink(String(i + 1), `${i + 1}) ${m}`)}`).join('   '));
-    setPS('duel ›');
-  }
-  function duelInput(v) {
-    const s = v.trim().toLowerCase();
-    if (/^(fuir|flee|run|q|quit|annuler|cancel)$/.test(s)) return endMode(t('duel.flee'));
-    let i = parseInt(s, 10) - 1;
-    if (!(i >= 0 && i <= 2)) { const all = UI['duel.moves'].flat(); const j = all.findIndex((m) => m.toLowerCase() === s); i = j >= 0 ? j % 3 : -1; }
-    if (i < 0) return say(t('duel.pick'), 'err');
-    const k = Math.floor(Math.random() * 3);
-    const mv = t('duel.moves');
-    say(t('duel.vs', { a: mv[i], b: mv[k] }), 'dim');
-    // l'estoc perce la taille, la taille brise la parade, la parade dévie l'estoc
-    if (i === k) say(t('duel.tie'));
-    else if ((i + 1) % 3 === k) { mode.me++; say(t('duel.hit'), 'acc'); Sound.play('select'); }
-    else { mode.him++; say(t('duel.hurt'), 'err'); Sound.play('click'); }
-    say(t('duel.score', { a: mode.me, b: mode.him }), 'dim');
-    if (mode.me >= 3) { Sound.play('slash', { dir: 1 }); endMode(); say(t('duel.win'), 'acc'); Seals.find('duel'); }
-    else if (mode.him >= 3) { endMode(); say(t('duel.lose'), 'err'); }
-  }
-
-  /* --- sceaux & trésor ---------------------------------------------------------- */
-  function seals() {
-    say(t('seal.progress', { n: Seals.count(), t: SEALS.length }), 'acc');
-    print(SEALS.map((id) => (Seals.has(id) ? `  <span class="acc">⟐</span> ${esc(t('seal.' + id))}` : `  <span class="dim">◇ ???  — ${esc(t('hint.' + id))}</span>`)).join('\n'));
-    if (Seals.all()) print(`  → ${cmdLink('tresor')}`);
-  }
-  function treasure() {
-    if (!Seals.all()) return say(t('treasure.locked', { n: Seals.count(), t: SEALS.length }), 'err');
-    print(esc(['      __________', '     /\\  ⚜  ⚜  \\', '    /  \\________\\', '    \\  /  ⟐⟐⟐   /', '     \\/________/'].join('\n')), 'pre acc');
-    para(t('treasure.open'));
-    print(`  ${cmdLink('theme or')}`);
-  }
-
   /* --- exécution --------------------------------------------------------------- */
   function run(line, echo = true) {
     if (busy) return;
     const v = line.trim();
     if (echo) print(`<span class="acc">${esc(ps1.textContent)}</span> ${esc(v)}`, 'echo');
     if (mode && mode.kind === 'ticket') return ticketInput(v);
-    if (mode && mode.kind === 'duel') return duelInput(v);
     if (mode && mode.kind === 'forge') {
       if (CANCEL.test(v)) return endMode();
       // une vraie commande tapée par réflexe ? on sort du mode forge et on l'exécute
@@ -485,7 +431,7 @@ function PageTerminal() {
     if (parts.length <= 1) pool = names();
     else if (parts[0] === 'open') pool = SITE.projects.map((p) => p.slug);
     else if (parts[0] === 'cd') pool = ['index', 'projets', 'a-propos', 'contact'];
-    else if (parts[0] === 'theme') pool = Object.keys(ACCENTS).filter((k) => !ACCENTS[k].secret || sealsDone());
+    else if (parts[0] === 'theme') pool = Object.keys(ACCENTS);
     else if (parts[0] === 'lang') pool = LANGS;
     else if (parts[0] === 'status') pool = loadTickets().map((x) => x.id);
     else return;

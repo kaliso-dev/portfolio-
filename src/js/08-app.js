@@ -343,7 +343,6 @@ async function boot() {
   $$('[data-i18n-aria]').forEach((n) => { n.setAttribute('aria-label', t(n.dataset.i18nAria)); });
   Sound.init();
   Music.init();
-  Seals.init();
   FORGE.load(true);
   $$('[data-site-name]').forEach((n) => { n.textContent = SITE.name; });
   // crédit de la musique (exigé par la licence gratuite de Fesliyan Studios)

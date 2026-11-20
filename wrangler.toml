@@ -27,10 +27,15 @@ migrations_dir = "worker/migrations"
 MODEL = "@cf/mistralai/mistral-small-3.1-24b-instruct"
 MODEL_FALLBACK = "@cf/meta/llama-3.1-8b-instruct-fp8-fast"
 # garde-fous : au-delà, KALISO répond « la forge refroidit » et propose un ticket
-FORGE_DAILY_CAP = "150"   # demandes / jour, tous visiteurs confondus (~55 neurones chacune)
+FORGE_DAILY_CAP = "150"   # plans / jour, tous visiteurs confondus (~60 à 110 neurones chacun)
 FORGE_PER_HOUR = "6"      # par visiteur
 FORGE_PER_DAY = "20"      # par visiteur
 TICKETS_PER_HOUR = "4"    # par visiteur
+# conversation avec KALISO (chaque message de KALISO coûte ~30 à 70 neurones)
+CHAT_PER_HOUR = "40"      # messages par visiteur
+CHAT_PER_DAY = "150"      # messages par visiteur
+CHAT_MAX_TURNS = "14"     # messages du visiteur par conversation, ensuite : compte rendu
+AI_NEURONS_DAY = "9000"   # budget de calcul du jour, conversations + plans (l'offre gratuite en donne 10 000)
 # si le site reste sur Netlify (ou ailleurs), mets son adresse ici, séparée par des virgules
 ALLOWED_ORIGINS = ""
 
